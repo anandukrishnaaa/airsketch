@@ -2,6 +2,7 @@
 
 import uuid
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from . import models
 from . import forms
 
@@ -40,3 +41,10 @@ def playground(request, uuid):
         "playground.html",
         {"uuid": uuid, "username": user.username, "email": user.email},
     )
+
+
+def canvas(request):
+    if request.method == "POST":
+        # Process the data
+        data = {"status": "success"}
+        return JsonResponse(data)

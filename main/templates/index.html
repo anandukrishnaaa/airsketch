@@ -1,13 +1,6 @@
 <!-- templates/main/index.html -->
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
     <h1>User Registration</h1>
     <form method="post" action="{% url 'register' %}">
         {% csrf_token %}
@@ -17,5 +10,5 @@
         <input type="email" id="email" name="email"><br>
         <input type="submit" value="Register">
     </form>
-</body>
-</html>
+    
+    {% endblock content %}
