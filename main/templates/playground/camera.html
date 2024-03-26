@@ -1,10 +1,22 @@
-{% extends "base.html" %}
+{% load static %}
 {% block content %}
+    <script src="{% static 'js/handtrack.min.js' %}"></script>
+    <style>
+canvas {
+    border: 1px solid black;
+}
+
+    </style>
+    <details>
+        <summary>Instructions</summary>
+        <p>Draw by using the point action, erase by using closed action.</p>
+    </details>
     <video id="videoElement" width="640" height="480" autoplay hidden=true>
     </video>
     <canvas id="canvasElement" width="640" height="480"></canvas>
     <canvas id="drawCanvas" width="640" height="480"></canvas>
     <button id="toggleButton">Toggle Camera</button>
+    {% csrf_token %}
     <script defer>
         const video = document.getElementById('videoElement');
         const canvas = document.getElementById('canvasElement');
@@ -12,29 +24,29 @@
         const drawCtx = drawCanvas.getContext('2d');
         const toggleButton = document.getElementById('toggleButton');
         const ctx = canvas.getContext('2d');
+        const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
         let isCameraOn = false;
         let model;
-        // Keep track of previous hand position
-let prevHandX = null;
-let prevHandY = null;
+        let handClosedTime = 0;
+        let prevHandX = null;
+        let prevHandY = null;
+        let shapes = [];
         
         const modelParams = {
             flipHorizontal: true,
             maxNumBoxes: 1,
             iouThreshold: 0.5,
-            scoreThreshold: 0.7,
+            scoreThreshold: 0.6,
         };
         
         const statusMessage = document.createElement('div');
         statusMessage.textContent = 'Loading model...';
         document.body.appendChild(statusMessage);
-        
         toggleButton.disabled = true;
         
         async function loadHandTrackModel() {
             try {
                 model = await handTrack.load(modelParams);
-                console.log(model.getModelParameters()); // returns model parameters
                 statusMessage.textContent = 'Model loaded';
                 toggleButton.disabled = false;
                 displayMessage('Camera turned off/unavailable');
@@ -61,53 +73,101 @@ let prevHandY = null;
             try {
                 const predictions = await model.detect(video);
                 model.renderPredictions(predictions, canvas, ctx, video);
-// Inside the runDetection function, update the initial hand position
-if (prevHandX === null && prevHandY === null && predictions.length > 0) {
-    const initialPrediction = predictions.find(prediction => prediction.label === 'point' && prediction.score > 0.8);
-    if (initialPrediction) {
-        prevHandX = initialPrediction.bbox[0] + initialPrediction.bbox[2] / 2;
-        prevHandY = initialPrediction.bbox[1] + initialPrediction.bbox[3] / 2;
-    }
-}
-                // prediction.score can be 0-1
-                // Draw lines between consecutive hand positions
-predictions.forEach(prediction => {
-    if (prediction.label === 'point' && prediction.score > 0.8) {
-        const handX = prediction.bbox[0] + prediction.bbox[2] / 2;
-        const handY = prediction.bbox[1] + prediction.bbox[3] / 2;
-
-        // Draw a line from previous position to current position
-        drawCtx.strokeStyle = 'blue';
-        drawCtx.lineWidth = 2;
-        drawCtx.beginPath();
-        drawCtx.moveTo(prevHandX, prevHandY);
-        drawCtx.lineTo(handX, handY);
-        drawCtx.stroke();
-
-        // Update previous hand position
-        prevHandX = handX;
-        prevHandY = handY;
-    }
-});
-
-// Detect hand gesture labeled as "closed" and clear canvas
-predictions.forEach(prediction => {
-    if (prediction.label === 'closed' && prediction.score > 0.8) {
-        clearDrawingCanvas();
-    }
-});
-
-// Function to clear the drawingCanvas
-function clearDrawingCanvas() {
-    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-}
-
+        
+                predictions.forEach(prediction => {
+                    if (prediction.label === 'point' && prediction.score > 0.8) {
+                        handlePointPrediction(prediction);
+                    }
+                });
+        
+                handleHandGesture(predictions);
+        
                 if (isCameraOn) {
                     requestAnimationFrame(runDetection);
                 }
             } catch (error) {
                 console.error('Error detecting:', error);
             }
+        }
+        
+        function handlePointPrediction(prediction) {
+            const handX = prediction.bbox[0] + prediction.bbox[2] / 2;
+            const handY = prediction.bbox[1] + prediction.bbox[3] / 2;
+        
+            if (prevHandX !== null && prevHandY !== null) {
+                drawLine(prevHandX, prevHandY, handX, handY);
+            }
+        
+            prevHandX = handX;
+            prevHandY = handY;
+            storeDrawingData(handX, handY);
+        }
+        
+        function handleHandGesture(predictions) {
+            const closedPrediction = predictions.find(prediction => prediction.label === 'closed' && prediction.score > 0.8);
+            if (closedPrediction) {
+                handClosedTime += 1;
+                if (handClosedTime >= 60) {
+                    clearDrawingCanvas();
+                }
+            } else {
+                handClosedTime = 0;
+                sendDataToCanvas()
+            }
+        }
+        
+        function drawLine(startX, startY, endX, endY) {
+            drawCtx.strokeStyle = 'blue';
+            drawCtx.lineWidth = 2;
+            drawCtx.beginPath();
+            drawCtx.moveTo(startX, startY);
+            drawCtx.lineTo(endX, endY);
+            drawCtx.stroke();
+        }
+        
+        function storeDrawingData(x, y) {
+            // Initialize a new shape if it's the first point
+            if (shapes.length === 0 || shapes[shapes.length - 1][2].length === 0) {
+                shapes.push([[x], [y], [Date.now()]]);
+            } else {
+                // Add the new point to the current shape
+                shapes[shapes.length - 1][0].push(x);
+                shapes[shapes.length - 1][1].push(y);
+                shapes[shapes.length - 1][2].push(Date.now() - shapes[shapes.length - 1][2][0]);
+            }
+        }
+        
+        
+        function sendDataToCanvas() {
+            const canvasData = {
+                canvasWidth: drawCanvas.width,
+                canvasHeight: drawCanvas.height,
+                shapes: shapes
+            };
+        
+            console.log('Data sent to server:', canvasData);
+        
+            fetch('http://127.0.0.1:8000/api_canvas/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfInput.value
+                },
+                body: JSON.stringify(canvasData)
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                console.log('Response from server:', responseData);
+            })
+            .catch(error => {
+                console.error('Error sending data:', error);
+            });
+        }
+        
+        function clearDrawingCanvas() {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            shapes = []; // Clear the shapes array
+            handClosedTime = 0;
         }
         
         function toggleCamera() {
@@ -142,6 +202,6 @@ function clearDrawingCanvas() {
         toggleButton.addEventListener('click', toggleCamera);
         
         loadHandTrackModel();
-        
+
     </script>
 {% endblock content %}
