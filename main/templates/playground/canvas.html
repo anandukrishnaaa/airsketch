@@ -3,10 +3,9 @@
     <script type="application/javascript"
             src="{% static 'js/handtrack.min.js' %}"></script>
     <style>
-canvas {
-    border: 1px solid black;
-}
-
+        canvas {
+            border: 1px solid black;
+        }
     </style>
     <details>
         <summary>Instructions</summary>
@@ -16,8 +15,10 @@ canvas {
     </video>
     <canvas id="canvasElement" width="640" height="480"></canvas>
     <canvas id="drawCanvas" width="640" height="480"></canvas>
-    <button id="toggleButton">Toggle Camera</button>
+    <button id="toggleButton">Draw using camera</button>
     <button id="clearButton">Clear Canvas</button>
+    <button id="mouseDrawToggle">Draw using mouse</button>
+    <p id="inputMethodMessage">Select an input method</p>
     {% csrf_token %}
     <input type="hidden" name="uuid" value="{{ uuid }}">
     <script defer>
@@ -27,6 +28,7 @@ canvas {
         const drawCtx = drawCanvas.getContext('2d');
         const toggleButton = document.getElementById('toggleButton');
         const clearButton = document.getElementById('clearButton');
+        const mouseDrawToggle = document.getElementById('mouseDrawToggle');
         const ctx = canvas.getContext('2d');
         const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
         const uuidInput = document.querySelector('input[name="uuid"]');
@@ -38,36 +40,26 @@ canvas {
         let shapes = [];
         let intervalId = null;
         let isDrawing = false;
+        let isMouseDrawing = false;
         let ws; // WebSocket object
         const uuid = uuidInput.value;
         console.log("UUID:", uuid);
-
+        
         // Initialize canvas WebSocket connection
         ws = new WebSocket(`ws://127.0.0.1:3000/ws/canvas/${uuid}`);
-
+        
         ws.onopen = function(event) {
             console.log('canvas WebSocket connection opened');
         };
-
-        // ws.onmessage = function(event) {
-        //    console.log('Message from server:', event.data);
-        //    try {
-        //        let jsonData = JSON.parse(event.data);
-        //        // Handle the parsed JSON data here
-        //        console.log('Parsed JSON data (stencil.html):', jsonData);
-        //    } catch (error) {
-        //        console.error('Error parsing JSON (stencil.html):', error);
-        //    }
-        //};
-
+        
         ws.onclose = function(event) {
             console.log('canvas WebSocket connection closed');
+            // Reconnect logic can be implemented here
         };
-
+        
         ws.onerror = function(error) {
             console.error('canvas WebSocket error:', error);
         };
-
         
         const modelParams = {
             flipHorizontal: true,
@@ -103,6 +95,7 @@ canvas {
                 clearCanvas();
             } catch (error) {
                 console.error('Error accessing camera:', error);
+                displayMessage('Error accessing camera');
             }
         }
         
@@ -112,7 +105,7 @@ canvas {
                 model.renderPredictions(predictions, canvas, ctx, video);
         
                 predictions.forEach(prediction => {
-                    if (prediction.label === 'point' && prediction.score > 0.8) {
+                    if (prediction.label === 'open' && prediction.score > 0.8) {
                         handlePointPrediction(prediction);
                     }
                 });
@@ -162,48 +155,41 @@ canvas {
         }
         
         function storeDrawingData(x, y) {
-            // Initialize a new shape if it's the first point
             if (shapes.length === 0 || shapes[shapes.length - 1][2].length === 0) {
                 shapes.push([[x], [y], [Date.now()]]);
             } else {
-                // Add the new point to the current shape
                 shapes[shapes.length - 1][0].push(x);
                 shapes[shapes.length - 1][1].push(y);
                 shapes[shapes.length - 1][2].push(Date.now() - shapes[shapes.length - 1][2][0]);
             }
-            // Start the interval if it's not already running
-        if (!isDrawing) {
-            isDrawing = true;
-            intervalId = setInterval(sendDataToCanvas, 5000); // 5 seconds interval
-        }
+            if (!isDrawing) {
+                isDrawing = true;
+                intervalId = setInterval(sendDataToCanvas, 5000);
             }
+        }
         
-        
-        // The rest of your code remains largely unchanged, but replace the fetch call with ws.send
         function sendDataToCanvas() {
             const canvasData = {
                 canvasWidth: drawCanvas.width,
                 canvasHeight: drawCanvas.height,
                 shapes: shapes
             };
-
+        
             console.log('Data sent to server:', canvasData);
-
-            // Send data using WebSocket
+        
             ws.send(JSON.stringify(canvasData));
         }
         
         function clearDrawingCanvas() {
             drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-            shapes = []; // Clear the shapes array
+            shapes = [];
             handClosedTime = 0;
-             // Stop the interval if it's running
-        if (isDrawing) {
-            clearInterval(intervalId);
-            intervalId = null; // Reset the interval ID
-            isDrawing = false;
-        }
+            if (isDrawing) {
+                clearInterval(intervalId);
+                intervalId = null;
+                isDrawing = false;
             }
+        }
         
         clearButton.addEventListener('click', clearDrawingCanvas);
         
@@ -212,8 +198,9 @@ canvas {
                 stopCamera();
                 displayMessage('Camera turned off/unavailable');
             } else {
+                updateInputMethodMessage('hand')
                 startCamera();
-                toggleButton.textContent = 'Stop Camera';
+                toggleButton.textContent = 'Stop drawing using Camera';
                 clearCanvas();
             }
         }
@@ -238,7 +225,61 @@ canvas {
         
         toggleButton.addEventListener('click', toggleCamera);
         
+        // Mouse drawing functionality
+        mouseDrawToggle.addEventListener('click', function() {
+            isMouseDrawing = !isMouseDrawing;
+            this.textContent = isMouseDrawing ? 'Stop Drawing with Mouse' : 'Draw using mouse';
+            updateInputMethodMessage(isMouseDrawing ? 'mouse' : 'hand'); // Update the message based on the current state
+            if (!isMouseDrawing) stopDrawing(); // Stop drawing with mouse if toggle is turned off
+        });
+        
+        // Add event listener for mouse down directly on the drawCanvas
+        drawCanvas.addEventListener('mousedown', startDrawing);
+        
+        // Remove unnecessary event listener when drawing stops
+        function stopDrawing() {
+            if (!isMouseDrawing) return;
+            drawCanvas.removeEventListener('mousemove', draw);
+            updateInputMethodMessage('hand'); // Update the message when stopping drawing with mouse
+        }
+        
+        // Update startDrawing function to handle mouse input
+        function startDrawing(event) {
+            if (!isMouseDrawing) return;
+            drawCanvas.addEventListener('mousemove', draw);
+            const { offsetX, offsetY } = event;
+            drawCtx.beginPath();
+            drawCtx.moveTo(offsetX, offsetY);
+            storeDrawingData(offsetX, offsetY);
+            updateInputMethodMessage('mouse'); // Update the message when starting to draw with mouse
+        }
+        
+        // Update draw function to handle mouse input
+        function draw(event) {
+            if (!isMouseDrawing) return;
+            const endX = event.clientX - drawCanvas.getBoundingClientRect().left;
+            const endY = event.clientY - drawCanvas.getBoundingClientRect().top;
+            drawCtx.lineTo(endX, endY);
+            drawCtx.stroke();
+        
+            // Store the drawing data in the shapes array
+            if (shapes.length === 0 || shapes[shapes.length - 1][2].length === 0) {
+                shapes.push([[endX], [endY], [Date.now()]]);
+            } else {
+                shapes[shapes.length - 1][0].push(endX);
+                shapes[shapes.length - 1][1].push(endY);
+                shapes[shapes.length - 1][2].push(Date.now() - shapes[shapes.length - 1][2][0]);
+            }
+        }
+        
+        document.addEventListener('mouseup', stopDrawing);
+        
+        // Function to update the input method message
+        function updateInputMethodMessage(method) {
+            const messageElement = document.getElementById('inputMethodMessage');
+            messageElement.textContent = `Drawing with: ${method}`;
+        }
+        
         loadHandTrackModel();
-
     </script>
 {% endblock content %}

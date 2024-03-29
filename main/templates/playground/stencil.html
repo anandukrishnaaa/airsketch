@@ -4,4 +4,38 @@
         <p>Output from stencil</p>
     </details>
     <h1>Stencil output</h1>
+    <div id="dataDisplay">Waiting for data</div>
+    <div id="updateCounter">Updates: 0</div>
+    <div id="lastUpdateTime">Last update: --:--</div>
+    <script defer>
+        let updateCount = 0;
+
+        ws.onmessage = function(event) {
+            try {
+                let jsonData = JSON.parse(event.data);
+                // Update the content of the dataDisplay element with the new data
+                document.getElementById('dataDisplay').textContent = 'Parsed JSON data: ' + jsonData.body;
+                // Increment the update counter and display the new count
+                updateCount++;
+                document.getElementById('updateCounter').textContent = 'Updates: ' + updateCount;
+                // Display the current time as the last update time
+                let now = new Date();
+                let hours = now.getHours();
+                let minutes = now.getMinutes();
+                // Format the time as HH:MM
+                let formattedTime = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+                document.getElementById('lastUpdateTime').textContent = 'Last update: ' + formattedTime;
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        };
+        
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+        
+        ws.onclose = function() {
+            console.log('WebSocket connection is closed.');
+        };
+    </script>
 {% endblock content %}

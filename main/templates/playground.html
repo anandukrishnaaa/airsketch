@@ -1,6 +1,8 @@
+{% extends "base.html" %}
 {% block content %}
    <h1>Welcome to the Playground</h1>
    <p>Your UUID is: {{ uuid }}</p>
-   {% include "playground/camera.html" %}
-   {% include "playground/stencil.html" %}
+   {% comment %} {% include "playground/camera.html" with uuid=uuid %} {% endcomment %}
+   {% include "playground/canvas.html" with uuid=uuid %}
+   {% include "playground/stencil.html" with uuid=uuid %}
 {% endblock content %}

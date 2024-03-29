@@ -1,8 +1,8 @@
 import json
-import requests
+import aiohttp
 
 
-def decode_canvas(event):
+async def decode_canvas(event):
     try:
         # Extract data from the event
         shapes = event["shapes"]
@@ -24,37 +24,37 @@ def decode_canvas(event):
             ],
         }
 
-        # Make the request to the external API
-        response = requests.post(
-            API_ENDPOINT,
-            headers={"Content-Type": "application/json; charset=utf-8"},
-            data=json.dumps(requestBody),
-        )
+        async with aiohttp.ClientSession() as session:
+            async with session.post(API_ENDPOINT, json=requestBody) as response:
+                response_data = await response.json()
 
-        print(response.json())
+                # Check if the response is successful
+                if response.status == 200:
+                    # Process the response data
+                    if (
+                        len(response_data) > 1
+                        and len(response_data[1]) > 0
+                        and "debug_info" in response_data[1][0][3]
+                    ):
+                        suggestions = (
+                            response_data[1][0][3]["debug_info"]
+                            .split("SCORESINKS: ")[1]
+                            .split(" Service_Recognize:")[0]
+                        )
 
-        # Check if the response is successful
-        if response.status_code == 200:
-            data = response.json()
-
-            # Ensure the response structure is as expected before processing
-            if len(data) > 1 and len(data[1]) > 0 and "debug_info" in data[1][0][3]:
-                suggestions = (
-                    data[1][0][3]["debug_info"]
-                    .split("SCORESINKS: ")[1]
-                    .split(" Service_Recognize:")[0]
-                )
-
-                # Return the suggestions
-                return {
-                    "statusCode": 200,
-                    "headers": {"Content-Type": "application/json"},
-                    "body": json.dumps({"data": suggestions}),
-                }
-            else:
-                raise ValueError("Unexpected response structure from the external API")
-        else:
-            raise requests.HTTPError(f"HTTP Error: {response.status_code}")
+                        return {
+                            "statusCode": 200,
+                            "headers": {"Content-Type": "application/json"},
+                            "body": json.dumps({"data": suggestions}),
+                        }
+                    else:
+                        raise ValueError(
+                            "Unexpected response structure from the external API"
+                        )
+                else:
+                    raise aiohttp.ClientResponseError(
+                        response.request_info, response.history, code=response.status
+                    )
 
     except Exception as error:
         print("Error processing request:", error)

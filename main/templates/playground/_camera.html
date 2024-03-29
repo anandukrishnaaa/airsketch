@@ -1,7 +1,6 @@
 {% load static %}
 {% block content %}
-    <script type="application/javascript"
-            src="{% static 'js/handtrack.min.js' %}"></script>
+    <script src="{% static 'js/handtrack.min.js' %}" type="text/javascript"></script>
     <style>
 canvas {
     border: 1px solid black;
@@ -17,19 +16,15 @@ canvas {
     <canvas id="canvasElement" width="640" height="480"></canvas>
     <canvas id="drawCanvas" width="640" height="480"></canvas>
     <button id="toggleButton">Toggle Camera</button>
-    <button id="clearButton">Clear Canvas</button>
     {% csrf_token %}
-    <input type="hidden" name="uuid" value="{{ uuid }}">
     <script defer>
         const video = document.getElementById('videoElement');
         const canvas = document.getElementById('canvasElement');
         const drawCanvas = document.getElementById('drawCanvas');
         const drawCtx = drawCanvas.getContext('2d');
         const toggleButton = document.getElementById('toggleButton');
-        const clearButton = document.getElementById('clearButton');
         const ctx = canvas.getContext('2d');
         const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-        const uuidInput = document.querySelector('input[name="uuid"]');
         let isCameraOn = false;
         let model;
         let handClosedTime = 0;
@@ -37,36 +32,7 @@ canvas {
         let prevHandY = null;
         let shapes = [];
         let intervalId = null;
-        let isDrawing = false;
-        let ws; // WebSocket object
-        const uuid = uuidInput.value;
-        console.log("UUID:", uuid);
-
-        // Initialize canvas WebSocket connection
-        ws = new WebSocket(`ws://127.0.0.1:3000/ws/canvas/${uuid}`);
-
-        ws.onopen = function(event) {
-            console.log('canvas WebSocket connection opened');
-        };
-
-        // ws.onmessage = function(event) {
-        //    console.log('Message from server:', event.data);
-        //    try {
-        //        let jsonData = JSON.parse(event.data);
-        //        // Handle the parsed JSON data here
-        //        console.log('Parsed JSON data (stencil.html):', jsonData);
-        //    } catch (error) {
-        //        console.error('Error parsing JSON (stencil.html):', error);
-        //    }
-        //};
-
-        ws.onclose = function(event) {
-            console.log('canvas WebSocket connection closed');
-        };
-
-        ws.onerror = function(error) {
-            console.error('canvas WebSocket error:', error);
-        };
+let isDrawing = false;
 
         
         const modelParams = {
@@ -88,8 +54,8 @@ canvas {
                 toggleButton.disabled = false;
                 displayMessage('Camera turned off/unavailable');
             } catch (error) {
-                console.error('Loading model:', error);
-                statusMessage.textContent = 'Loading model';
+                console.error('Error loading model:', error);
+                statusMessage.textContent = 'Error loading model';
             }
         }
         
@@ -172,25 +138,37 @@ canvas {
                 shapes[shapes.length - 1][2].push(Date.now() - shapes[shapes.length - 1][2][0]);
             }
             // Start the interval if it's not already running
-        if (!isDrawing) {
-            isDrawing = true;
-            intervalId = setInterval(sendDataToCanvas, 5000); // 5 seconds interval
+    if (!isDrawing) {
+        isDrawing = true;
+        intervalId = setInterval(sendDataToCanvas, 5000); // 5 seconds interval
+    }
         }
-            }
         
         
-        // The rest of your code remains largely unchanged, but replace the fetch call with ws.send
         function sendDataToCanvas() {
             const canvasData = {
                 canvasWidth: drawCanvas.width,
                 canvasHeight: drawCanvas.height,
                 shapes: shapes
             };
-
+        
             console.log('Data sent to server:', canvasData);
-
-            // Send data using WebSocket
-            ws.send(JSON.stringify(canvasData));
+        
+            fetch('http://127.0.0.1:8000/api_canvas/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfInput.value
+                },
+                body: JSON.stringify(canvasData)
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                console.log('Response from server:', responseData);
+            })
+            .catch(error => {
+                console.error('Error sending data:', error);
+            });
         }
         
         function clearDrawingCanvas() {
@@ -198,14 +176,13 @@ canvas {
             shapes = []; // Clear the shapes array
             handClosedTime = 0;
              // Stop the interval if it's running
-        if (isDrawing) {
-            clearInterval(intervalId);
-            intervalId = null; // Reset the interval ID
-            isDrawing = false;
+    if (isDrawing) {
+        clearInterval(intervalId);
+        intervalId = null; // Reset the interval ID
+        isDrawing = false;
+    }
         }
-            }
         
-        clearButton.addEventListener('click', clearDrawingCanvas);
         
         function toggleCamera() {
             if (isCameraOn) {
