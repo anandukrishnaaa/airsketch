@@ -4,38 +4,177 @@
         <p>Output from stencil</p>
     </details>
     <h1>Stencil output</h1>
-    <div id="dataDisplay">Waiting for data</div>
+    <pre id="dataDisplayPre">Waiting for data</pre>
     <div id="updateCounter">Updates: 0</div>
     <div id="lastUpdateTime">Last update: --:--</div>
+    <div id="stencilDataDisplay">Waiting for data</div>
+    <div id="stencilUpdateCounter">Updates: 0</div>
+    <div id="stencilLastUpdateTime">Last update: --:--</div>
+    <pre id="stencilDataPre"></pre>
+    <div id="stencilContainer"></div>
     <script defer>
-        let updateCount = 0;
+    let updateCount = 0;
+    let wsStencil; // WebSocket object
 
-        ws.onmessage = function(event) {
-            try {
-                let jsonData = JSON.parse(event.data);
-                // Update the content of the dataDisplay element with the new data
-                document.getElementById('dataDisplay').textContent = 'Parsed JSON data: ' + jsonData.body;
-                // Increment the update counter and display the new count
-                updateCount++;
-                document.getElementById('updateCounter').textContent = 'Updates: ' + updateCount;
-                // Display the current time as the last update time
-                let now = new Date();
-                let hours = now.getHours();
-                let minutes = now.getMinutes();
-                // Format the time as HH:MM
-                let formattedTime = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
-                document.getElementById('lastUpdateTime').textContent = 'Last update: ' + formattedTime;
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
+    // Controls
+    const skipSame = true;
+    const maxGenerations = 10;
+    const strictHasImg = true;
+
+    // Placeholder image URL
+    const placeholderImage = 'https://via.placeholder.com/150';
+
+    // Cache DOM element references
+    const dataDisplayPre = document.getElementById('dataDisplayPre');
+    const updateCounter = document.getElementById('updateCounter');
+    const lastUpdateTime = document.getElementById('lastUpdateTime');
+    const stencilDataPre = document.getElementById('stencilDataPre');
+    const stencilUpdateCounter = document.getElementById('stencilUpdateCounter');
+    const stencilLastUpdateTime = document.getElementById('stencilLastUpdateTime');
+    const stencilContainer = document.getElementById('stencilContainer');
+
+    // Initialize stencil WebSocket connection
+    wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
+
+    wsStencil.onopen = function(stencilEvent) {
+        console.log('stencil WebSocket connection opened');
+    };
+    wsStencil.onclose = function(stencilEvent) {
+        console.log('stencil WebSocket connection closed');
+        
+        // Reconnect logic
+        if (reconnectAttempts < maxReconnectAttempts) {
+            setTimeout(function() {
+                // Attempt to reconnect
+                try {
+                    wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
+                    
+                    // Reset reconnectAttempts if reconnection is successful
+                    wsStencil.onopen = function(event) {
+                        console.log('stencil WebSocket reconnected successfully');
+                        reconnectAttempts = 0;
+                    };
+                    
+                    // Handle errors that occur during reconnection
+                    wsStencil.onerror = function(error) {
+                        console.error('stencil WebSocket reconnection error:', error);
+                        // Increment reconnectAttempts on reconnection failure
+                        reconnectAttempts++;
+                    };
+                } catch (error) {
+                    console.error('Error occurred while attempting to reconnect:', error);
+                    // Increment reconnectAttempts on reconnection failure
+                    reconnectAttempts++;
+                }
+            }, 3000); // Reconnect after 3 seconds (adjust as needed)
+        } else {
+            console.log(`Maximum reconnect attempts (${maxReconnectAttempts}) reached. Stopping reconnect attempts.`);
+        }
+    };
+
+    wsCanvas.onmessage = function(canvasEvent) {
+        try {
+            let jsonData = JSON.parse(canvasEvent.data);
+            wsStencil.send(JSON.stringify(jsonData.body));
+
+            let jsonDataString = JSON.stringify(jsonData, null, 2);
+            dataDisplayPre.innerHTML = jsonDataString;
+
+            updateCount++;
+            updateCounter.textContent = `Updates: ${updateCount}`;
+            lastUpdateTime.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+    };
+
+    wsStencil.onmessage = function(stencilEvent) {
+        try {
+            let stencilData = JSON.parse(stencilEvent.data);
+            console.log(stencilData);
+
+            let stencilDataString = JSON.stringify(stencilData, null, 2);
+            stencilDataPre.innerHTML = stencilDataString;
+
+            updateCount++;
+            stencilUpdateCounter.textContent = `Updates: ${updateCount}`;
+            stencilLastUpdateTime.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+
+            // Clear existing elements in stencilContainer
+            stencilContainer.innerHTML = '';
+
+            // Determine if all elements should be generated
+            let generateAll = maxGenerations === true;
+            let maxElements = generateAll ? Infinity : maxGenerations;
+
+            // Counter for generated elements
+            let generatedCount = 0;
+
+            // Set to store unique source URLs
+            let uniqueSources = new Set();
+
+            // Iterate over stencilData
+            for (const [objectKey, objectValue] of Object.entries(stencilData)) {
+                if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
+
+                if (objectValue.stencil) {
+                    // If the object has a stencil array
+                    if (skipSame) {
+                        // If skipSame is true, consider only one source URL
+                        let uniqueSrc = objectValue.stencil[0].src; // Pick the first source
+                        if (!uniqueSources.has(uniqueSrc)) {
+                            // If this source hasn't been processed before
+                            const img = createImageElement(uniqueSrc, `${objectKey} x ${objectValue.stencil[0].collection}`);
+                            const text = createTextElement(objectKey);
+                            stencilContainer.appendChild(text);
+                            stencilContainer.appendChild(img);
+                            uniqueSources.add(uniqueSrc); // Add to set to mark it as processed
+                            generatedCount++;
+                        }
+                    } else {
+                        // If skipSame is false, generate images for all sources
+                        for (const stencil of objectValue.stencil) {
+                            if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
+
+                            const img = createImageElement(stencil.src, `${objectKey} x ${stencil.collection}`);
+                            const text = createTextElement(objectKey);
+                            stencilContainer.appendChild(text);
+                            stencilContainer.appendChild(img);
+                            generatedCount++;
+                        }
+                    }
+                } else {
+                    // If the object does not have a stencil array, use a placeholder image and text
+                    if (!strictHasImg) {
+                        if (generatedCount >= maxElements) return; // Stop generating if maxElements is reached
+
+                        const img = createImageElement(placeholderImage, `${objectKey} x Not present in stencils database`);
+                        const text = createTextElement(objectKey);
+                        stencilContainer.appendChild(text);
+                        stencilContainer.appendChild(img);
+                        generatedCount++;
+                    }
+                }
             }
-        };
-        
-        ws.onerror = function(error) {
-            console.error('WebSocket error:', error);
-        };
-        
-        ws.onclose = function() {
-            console.log('WebSocket connection is closed.');
-        };
+
+            console.log(generatedCount)
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+    };
+
+    function createImageElement(src, alt) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = alt;
+        img.loading = "lazy";
+        return img;
+    }
+
+    function createTextElement(text) {
+        const textElement = document.createElement('p');
+        textElement.textContent = text;
+        return textElement;
+    }
     </script>
 {% endblock content %}

@@ -7,5 +7,4 @@ urlpatterns = [
     path(
         "playground/<uuid:uuid>/", views.playground, name="playground"
     ),  # URL pattern for playground.html with UUID parameter
-    path("api_canvas/", views.canvas, name="canvas"),
 ]

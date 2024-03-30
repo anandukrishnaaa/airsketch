@@ -6,6 +6,10 @@
         canvas {
             border: 1px solid black;
         }
+        #drawCanvas {
+            cursor: pointer; 
+        }
+        
     </style>
     <details>
         <summary>Instructions</summary>
@@ -41,24 +45,53 @@
         let intervalId = null;
         let isDrawing = false;
         let isMouseDrawing = false;
-        let ws; // WebSocket object
+        let wsCanvas; // WebSocket object
         const uuid = uuidInput.value;
+        let canvasUpdated = false; 
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5; // Maximum number of reconnect attempts
+
         console.log("UUID:", uuid);
         
         // Initialize canvas WebSocket connection
-        ws = new WebSocket(`ws://127.0.0.1:3000/ws/canvas/${uuid}`);
+        wsCanvas = new WebSocket(`ws://127.0.0.1:3000/ws/canvas/${uuid}`);
         
-        ws.onopen = function(event) {
+        wsCanvas.onopen = function(canvasEvent) {
             console.log('canvas WebSocket connection opened');
         };
         
-        ws.onclose = function(event) {
-            console.log('canvas WebSocket connection closed');
-            // Reconnect logic can be implemented here
-        };
         
-        ws.onerror = function(error) {
-            console.error('canvas WebSocket error:', error);
+        wsCanvas.onclose = function(canvasEvent) {
+            console.log('stencil WebSocket connection closed');
+            
+            // Reconnect logic
+            if (reconnectAttempts < maxReconnectAttempts) {
+                setTimeout(function() {
+                    // Attempt to reconnect
+                    try {
+                        wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
+                        
+                        // Reset reconnectAttempts if reconnection is successful
+                        wsStencil.onopen = function(event) {
+                            console.log('stencil WebSocket reconnected successfully');
+                            reconnectAttempts = 0;
+                        };
+                        
+                        // Handle errors that occur during reconnection
+                        wsStencil.onerror = function(error) {
+                            console.error('stencil WebSocket reconnection error:', error);
+                            // Increment reconnectAttempts on reconnection failure
+                            reconnectAttempts++;
+                        };
+                    } catch (error) {
+                        console.error('Error occurred while attempting to reconnect:', error);
+                        // Increment reconnectAttempts on reconnection failure
+                        reconnectAttempts++;
+                    }
+                }, 3000); // Reconnect after 3 seconds (adjust as needed)
+            } else {
+                console.log(`Maximum reconnect attempts (${maxReconnectAttempts}) reached. Stopping reconnect attempts.`);
+            }
         };
         
         const modelParams = {
@@ -155,18 +188,23 @@
         }
         
         function storeDrawingData(x, y) {
-            if (shapes.length === 0 || shapes[shapes.length - 1][2].length === 0) {
-                shapes.push([[x], [y], [Date.now()]]);
-            } else {
-                shapes[shapes.length - 1][0].push(x);
-                shapes[shapes.length - 1][1].push(y);
-                shapes[shapes.length - 1][2].push(Date.now() - shapes[shapes.length - 1][2][0]);
-            }
-            if (!isDrawing) {
-                isDrawing = true;
-                intervalId = setInterval(sendDataToCanvas, 5000);
-            }
+        if (shapes.length === 0 || shapes[shapes.length - 1][2].length === 0) {
+            shapes.push([[x], [y], [Date.now()]]);
+        } else {
+            shapes[shapes.length - 1][0].push(x);
+            shapes[shapes.length - 1][1].push(y);
+            shapes[shapes.length - 1][2].push(Date.now() - shapes[shapes.length - 1][2][0]);
         }
+        canvasUpdated = true; // Set the flag to true when the canvas is updated
+    }
+
+        // Set up an interval to check if the canvas has been updated
+        setInterval(() => {
+            if (canvasUpdated) {
+                sendDataToCanvas();
+                canvasUpdated = false; // Reset the flag after sending data
+            }
+        }, 5000);
         
         function sendDataToCanvas() {
             const canvasData = {
@@ -177,7 +215,7 @@
         
             console.log('Data sent to server:', canvasData);
         
-            ws.send(JSON.stringify(canvasData));
+            wsCanvas.send(JSON.stringify(canvasData));
         }
         
         function clearDrawingCanvas() {

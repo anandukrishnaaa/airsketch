@@ -47,22 +47,3 @@ def playground(request, uuid):
     response.set_cookie("is_author", True)
     response.set_cookie("is_editable", True)
     return response
-
-
-def canvas(request):
-    if request.method == "POST":
-        try:
-            # Parse incoming JSON data
-            data = json.loads(request.body)
-
-            # Call the decode_canvas function with the parsed data
-            result = decode_canvas(data)
-
-            # Return JSON response
-            return JsonResponse(result)
-        except Exception as e:
-            # Return error response if any exception occurs
-            return JsonResponse({"error": str(e)}, status=500)
-
-    # Return error response if request method is not POST
-    return JsonResponse({"error": "Method not allowed"}, status=405)
