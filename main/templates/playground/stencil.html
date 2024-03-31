@@ -11,7 +11,9 @@
     <div id="stencilUpdateCounter">Updates: 0</div>
     <div id="stencilLastUpdateTime">Last update: --:--</div>
     <pre id="stencilDataPre"></pre>
-    <div id="stencilContainer"></div>
+    <div id="stencilContainer" class="container">
+        <div class="row" id="stencilRow"></div>
+    </div>
     <script defer>
     let updateCount = 0;
     let wsStencil; // WebSocket object
@@ -92,76 +94,94 @@
         try {
             let stencilData = JSON.parse(stencilEvent.data);
             console.log(stencilData);
-
+    
             let stencilDataString = JSON.stringify(stencilData, null, 2);
             stencilDataPre.innerHTML = stencilDataString;
-
+    
             updateCount++;
             stencilUpdateCounter.textContent = `Updates: ${updateCount}`;
             stencilLastUpdateTime.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
-
+    
             // Clear existing elements in stencilContainer
-            stencilContainer.innerHTML = '';
-
+            stencilRow.innerHTML = '';
+    
             // Determine if all elements should be generated
             let generateAll = maxGenerations === true;
             let maxElements = generateAll ? Infinity : maxGenerations;
-
+    
             // Counter for generated elements
             let generatedCount = 0;
-
+    
             // Set to store unique source URLs
             let uniqueSources = new Set();
-
+    
+    
             // Iterate over stencilData
-            for (const [objectKey, objectValue] of Object.entries(stencilData)) {
+            // Iterate over stencilData
+for (const [objectKey, objectValue] of Object.entries(stencilData)) {
+    if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
+
+    if (objectValue.stencil) {
+        // If the object has a stencil array
+        if (skipSame) {
+            // If skipSame is true, consider only one source URL
+            let uniqueSrc = objectValue.stencil[0].src; // Pick the first source
+            if (!uniqueSources.has(uniqueSrc)) {
+                // If this source hasn't been processed before
+                const img = createImageElement(uniqueSrc, `${objectKey} x ${objectValue.stencil[0].collection}`);
+                const text = createTextElement(objectKey);
+                // Create a new div for each pair of p and img
+                const pairDiv = document.createElement('div');
+                pairDiv.classList.add('col-md-3', 'stencil-suggestion');
+                pairDiv.appendChild(text);
+                pairDiv.appendChild(img);
+                // Append the pairDiv to the stencilRow
+                stencilRow.appendChild(pairDiv);
+                uniqueSources.add(uniqueSrc); // Add to set to mark it as processed
+                generatedCount++;
+            }
+        } else {
+            // If skipSame is false, generate images for all sources
+            for (const stencil of objectValue.stencil) {
                 if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
 
-                if (objectValue.stencil) {
-                    // If the object has a stencil array
-                    if (skipSame) {
-                        // If skipSame is true, consider only one source URL
-                        let uniqueSrc = objectValue.stencil[0].src; // Pick the first source
-                        if (!uniqueSources.has(uniqueSrc)) {
-                            // If this source hasn't been processed before
-                            const img = createImageElement(uniqueSrc, `${objectKey} x ${objectValue.stencil[0].collection}`);
-                            const text = createTextElement(objectKey);
-                            stencilContainer.appendChild(text);
-                            stencilContainer.appendChild(img);
-                            uniqueSources.add(uniqueSrc); // Add to set to mark it as processed
-                            generatedCount++;
-                        }
-                    } else {
-                        // If skipSame is false, generate images for all sources
-                        for (const stencil of objectValue.stencil) {
-                            if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
-
-                            const img = createImageElement(stencil.src, `${objectKey} x ${stencil.collection}`);
-                            const text = createTextElement(objectKey);
-                            stencilContainer.appendChild(text);
-                            stencilContainer.appendChild(img);
-                            generatedCount++;
-                        }
-                    }
-                } else {
-                    // If the object does not have a stencil array, use a placeholder image and text
-                    if (!strictHasImg) {
-                        if (generatedCount >= maxElements) return; // Stop generating if maxElements is reached
-
-                        const img = createImageElement(placeholderImage, `${objectKey} x Not present in stencils database`);
-                        const text = createTextElement(objectKey);
-                        stencilContainer.appendChild(text);
-                        stencilContainer.appendChild(img);
-                        generatedCount++;
-                    }
-                }
+                const img = createImageElement(stencil.src, `${objectKey} x ${stencil.collection}`);
+                const text = createTextElement(objectKey);
+                // Create a new div for each pair of p and img
+                const pairDiv = document.createElement('div');
+                pairDiv.classList.add('col-md-3', 'stencil-suggestion');
+                pairDiv.appendChild(text);
+                pairDiv.appendChild(img);
+                // Append the pairDiv to the stencilRow
+                stencilRow.appendChild(pairDiv);
+                generatedCount++;
             }
+        }
+    } else {
+        // If the object does not have a stencil array, use a placeholder image and text
+        if (!strictHasImg) {
+            if (generatedCount >= maxElements) return; // Stop generating if maxElements is reached
 
-            console.log(generatedCount)
+            const img = createImageElement(placeholderImage, `${objectKey} x Not present in stencils database`);
+            const text = createTextElement(objectKey);
+            // Create a new div for each pair of p and img
+            const pairDiv = document.createElement('div');
+            pairDiv.classList.add('col-md-3', 'stencil-suggestion');
+            pairDiv.appendChild(text);
+            pairDiv.appendChild(img);
+            // Append the pairDiv to the stencilRow
+            stencilRow.appendChild(pairDiv);
+            generatedCount++;
+        }
+    }
+}
+    
+            console.log("Images generated: ", generatedCount);
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
     };
+    
 
     function createImageElement(src, alt) {
         const img = document.createElement('img');
