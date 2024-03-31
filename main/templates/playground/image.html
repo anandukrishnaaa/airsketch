@@ -1,0 +1,259 @@
+{% block content %}
+    <style>
+        #dropzone {
+            width: 200px;
+            height: 200px;
+            border: 1px solid black;
+            margin-top: 20px;
+            padding: 10px;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            z-index: 1000; /* Ensure dropzone is always on top */
+            background: rgba(255, 255, 255, 0.5); /* Semi-transparent background */
+            backdrop-filter: blur(10px); /* Apply blur effect */
+            border-radius: 20px; /* Rounded corners */
+        }
+        #dropzoneResults {
+            top: 20px;
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 400px; /* Set a fixed height for the div */        
+            overflow-y: auto; /* Make the content vertically scrollable */
+            z-index: 999; /* Lower than dropzone */
+        }
+        
+/* For WebKit-based browsers */
+#dropzoneResults::-webkit-scrollbar {
+    width: 2px; /* Make the scrollbar thinner */
+}
+
+#dropzoneResults::-webkit-scrollbar-track {
+    background: transparent; /* Transparent track */
+}
+
+#dropzoneResults::-webkit-scrollbar-thumb {
+    background-color: #c5c5c5; /* Light grey thumb */
+    border-radius: 2px; /* Rounded corners */
+}
+        
+        
+    </style>
+    <div id="dropzone"
+         class="dropzone  rounded-4"
+         style="display: none;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 200px;
+                height: 200px;
+                border: 1px solid black">
+        <p style="text-align: center; margin-top: 30px;">Drop here</p>
+    </div>
+    <div id="dropzoneResults"
+         class="list-group"
+         style="display: none;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 200px"></div>
+    <script defer>
+    let allItems = {}; // Global JSON object to accumulate all dropped items
+
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+    
+    function drag(event) {
+        let itemId = event.target.id; // Assuming each draggable item has a unique ID
+        let itemName = event.target.querySelector('p').textContent;
+        let imgSrc = event.target.querySelector('img').src;
+        let imgAlt = event.target.querySelector('img').alt;
+        
+        let itemDetails = {
+            "item_name": itemName,
+            "src": imgSrc,
+            "alt": imgAlt
+        };
+        
+        event.dataTransfer.setData("text", JSON.stringify({[itemId]: itemDetails}));
+    }
+    function updateButtonsState() {
+        // Check if there are any items left in the allItems object
+        if (Object.keys(allItems).length === 0) {
+            // If no items, disable the buttons
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('deleteBtn').disabled = true;
+        } else {
+            // If there are items, enable the buttons
+            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('deleteBtn').disabled = false;
+        }
+    }
+    function drop(event) {
+        event.preventDefault();
+        let data = JSON.parse(event.dataTransfer.getData("text"));
+        
+        // Append the new item to the global JSON object
+        Object.assign(allItems, data);
+        
+        // Update the list of dropped items
+        let list = document.getElementById('dropzoneResults');
+        list.innerHTML = ''; // Clear the list
+        
+        // Create a container for the "Select All" checkbox and the "Results" text
+        let headerContainer = document.createElement('div');
+        headerContainer.style.display = 'flex';
+        headerContainer.style.alignItems = 'center';
+        
+        // Create a "Select All" checkbox
+        let selectAllCheckbox = document.createElement('input');
+        selectAllCheckbox.type = 'checkbox';
+        selectAllCheckbox.id = 'selectAllCheckbox';
+        selectAllCheckbox.addEventListener('change', function(e) {
+            let checkboxes = document.querySelectorAll('#dropzoneResults input[type="checkbox"]');
+            for (let i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = e.target.checked;
+            }
+        });
+        // Append the "Select All" checkbox to the header container
+        headerContainer.appendChild(selectAllCheckbox);
+        
+        // Create a "Heading" text element
+        let headingText = document.createElement('span');
+        headingText.textContent = 'Shortlisted items';
+        headingText.style.fontWeight = 600; // Make the text bold
+        headingText.style.marginLeft = '10px'; // Add some space between the checkbox and the text
+    
+        headerContainer.className = 'list-group-item list-group-item-action';
+        // Append the "Results" text to the header container
+        headerContainer.appendChild(headingText);
+
+        // Append the header container to the list
+        list.appendChild(headerContainer);
+        
+        for (let key in allItems) {
+            let item = allItems[key];
+            let listItem = document.createElement('a');
+            listItem.href = '#';
+            listItem.className = 'list-group-item list-group-item-action';
+            
+            // Create a container for the checkbox and the item text
+            let itemContainer = document.createElement('div');
+            itemContainer.style.display = 'flex';
+            itemContainer.style.alignItems = 'center';
+            
+            // Create a checkbox for each item
+            let checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = 'checkbox-' + key; // Ensure each checkbox has a unique ID
+            checkbox.style.marginRight = '10px'; // Add space to the right of the checkbox
+            
+            // Append the checkbox to the container
+            itemContainer.appendChild(checkbox);
+            
+            // Append the item text to the container
+            let itemText = document.createElement('span');
+            itemText.textContent = item.item_name;
+            itemContainer.appendChild(itemText);
+            
+            // Append the container to the list item
+            listItem.appendChild(itemContainer);
+            list.appendChild(listItem);
+
+            // Add an event listener to the list item to toggle the checkbox state
+            listItem.addEventListener('click', function(e) {
+            // Prevent the default action of the <a> tag
+            e.preventDefault();
+            // Toggle the checkbox state
+            checkbox.checked = !checkbox.checked;
+        });
+            
+        }
+        
+        // Create a container for the buttons
+        let buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.justifyContent = 'space-between'; // Space out the buttons
+        buttonContainer.style.padding = '10px'; // Add some padding
+        
+        // Create a "Save" button
+        let saveButton = document.createElement('button');
+        saveButton.textContent = 'Save';
+        saveButton.id = 'saveBtn';
+        saveButton.className = "btn btn-success"
+        saveButton.style.marginRight = '10px'; // Add some space between the buttons
+        
+        // Create a "Delete" button
+        let deleteButton = document.createElement('button');
+        deleteButton.id = 'deleteBtn';
+        deleteButton.textContent = 'Delete';
+        deleteButton.className = "btn btn-danger"
+        
+        // Append the buttons to the button container
+        buttonContainer.appendChild(saveButton);
+        buttonContainer.appendChild(deleteButton);
+
+        buttonContainer.className = "list-group-item list-group-item-action"
+        
+        // Append the button container to the list
+        list.appendChild(buttonContainer);
+        
+        list.style.display = 'block'; // Ensure the list is displayed
+
+        updateButtonsState();
+    }
+    
+
+    // Ensure the drop event listener is correctly attached to the dropzone
+    document.getElementById('dropzone').addEventListener('drop', drop);
+    document.getElementById('dropzone').addEventListener('dragover', allowDrop);
+
+    // Add the drag and drop event listeners
+    document.addEventListener('dragstart', function(e) {
+        document.getElementById('dropzone').style.display = 'block';
+    });
+
+    document.addEventListener('dragend', function(e) {
+        document.getElementById('dropzone').style.display = 'none';
+    });
+ 
+    document.getElementById('dropzoneResults').addEventListener('click', function(event) {
+        // Check if the clicked element is the deleteBtn
+        if (event.target.id === 'deleteBtn') {
+            // Proceed with the deletion logic
+            deleteSelectedItems();
+        }
+    });
+
+    function deleteSelectedItems() {
+        // Select all checked checkboxes within dropzoneResults, excluding the selectAllCheckbox
+        const checkboxes = document.querySelectorAll('#dropzoneResults input[type="checkbox"]:checked');
+        
+        // Iterate over each checked checkbox
+        checkboxes.forEach(checkbox => {
+            // Check if the current checkbox is not the selectAllCheckbox
+            if (checkbox.id !== 'selectAllCheckbox') {
+                // Extract the key of the item from the checkbox id
+                let key = checkbox.id.replace('checkbox-', '');
+                
+                // Remove the item from the allItems object
+                delete allItems[key];
+                
+                // Remove the checkbox and its associated list item from the DOM
+                checkbox.closest('.list-group-item').remove();
+            }
+            updateButtonsState();
+        });
+        
+        // Optionally, clear the selectAllCheckbox if all items are deleted
+        if (Object.keys(allItems).length === 0) {
+            document.getElementById('selectAllCheckbox').checked = false;
+        }
+    }
+    </script>
+{% endblock content %}

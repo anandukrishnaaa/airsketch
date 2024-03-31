@@ -1,26 +1,57 @@
 {% block content %}
-    <details>
-        <summary>Output</summary>
-        <p>Output from stencil</p>
-    </details>
-    <h1>Stencil output</h1>
-    <pre id="dataDisplayPre">Waiting for data</pre>
-    <div id="updateCounter">Updates: 0</div>
-    <div id="lastUpdateTime">Last update: --:--</div>
-    <div id="stencilDataDisplay">Waiting for data</div>
-    <div id="stencilUpdateCounter">Updates: 0</div>
-    <div id="stencilLastUpdateTime">Last update: --:--</div>
-    <pre id="stencilDataPre"></pre>
-    <div id="stencilContainer" class="container">
-        <div class="row" id="stencilRow"></div>
+    <style>
+    img {
+        pointer-events: none;
+       }
+       
+    </style>
+    <div class="container">
+        <details>
+            <summary>Output</summary>
+            <p>Output from stencil</p>
+        </details>
+        <section id="stencilSection">
+            <h1>Stencil output</h1>
+            <div id="stencilContainer" class="container">
+                <div class="row" id="stencilRow"></div>
+            </div>
+            <div class="offcanvas offcanvas-end"
+                 tabindex="-1"
+                 id="debugStatsOffcanvas"
+                 aria-labelledby="debugStatsOffcanvasLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="debugStatsOffcanvasLabel">Debug Stats</h5>
+                    <button type="button"
+                            class="btn-close text-reset"
+                            data-bs-dismiss="offcanvas"
+                            aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div id="debugStats">
+                        <div class="container">
+                            <div class="row">
+                                <div id="updateCounter" class="text-muted">Updates: 0</div>
+                                <div id="lastUpdateTime" class="text-muted">Last update: --:--</div>
+                                <pre id="dataDisplayPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                            </div>
+                            <div class="row">
+                                <div id="stencilUpdateCounter" class="text-muted">Updates: 0</div>
+                                <div id="stencilLastUpdateTime" class="text-muted">Last update: --:--</div>
+                                <pre id="stencilDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
     <script defer>
     let updateCount = 0;
     let wsStencil; // WebSocket object
 
     // Controls
-    const skipSame = true;
-    const maxGenerations = 10;
+    const skipSame = false;
+    const maxGenerations = true;
     const strictHasImg = true;
 
     // Placeholder image URL
@@ -34,6 +65,14 @@
     const stencilUpdateCounter = document.getElementById('stencilUpdateCounter');
     const stencilLastUpdateTime = document.getElementById('stencilLastUpdateTime');
     const stencilContainer = document.getElementById('stencilContainer');
+
+        
+
+    // Initialize the offcanvas
+    var offcanvasElementList = [].slice.call(document.querySelectorAll('.offcanvas'))
+    var offcanvasList = offcanvasElementList.map(function (offcanvasEl) {
+      return new bootstrap.Offcanvas(offcanvasEl)
+    })
 
     // Initialize stencil WebSocket connection
     wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
@@ -117,7 +156,6 @@
     
     
             // Iterate over stencilData
-            // Iterate over stencilData
 for (const [objectKey, objectValue] of Object.entries(stencilData)) {
     if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
 
@@ -132,7 +170,12 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
                 const text = createTextElement(objectKey);
                 // Create a new div for each pair of p and img
                 const pairDiv = document.createElement('div');
+                pairDiv.id = `stencil-suggestion_${objectKey}_${objectValue.stencil[0].collection}_${generatedCount}`
                 pairDiv.classList.add('col-md-3', 'stencil-suggestion');
+                // Add draggable attribute
+                pairDiv.setAttribute('draggable', 'true');
+                // Add ondragstart attribute
+                pairDiv.setAttribute('ondragstart', 'drag(event)');
                 pairDiv.appendChild(text);
                 pairDiv.appendChild(img);
                 // Append the pairDiv to the stencilRow
@@ -149,7 +192,12 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
                 const text = createTextElement(objectKey);
                 // Create a new div for each pair of p and img
                 const pairDiv = document.createElement('div');
+                pairDiv.id = `stencil-suggestion_${objectKey}_${objectValue.stencil[0].collection}_${generatedCount}`
                 pairDiv.classList.add('col-md-3', 'stencil-suggestion');
+                // Add draggable attribute
+                pairDiv.setAttribute('draggable', 'true');
+                // Add ondragstart attribute
+                pairDiv.setAttribute('ondragstart', 'drag(event)');
                 pairDiv.appendChild(text);
                 pairDiv.appendChild(img);
                 // Append the pairDiv to the stencilRow
@@ -166,7 +214,12 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
             const text = createTextElement(objectKey);
             // Create a new div for each pair of p and img
             const pairDiv = document.createElement('div');
+            pairDiv.id = `stencil-suggestion_${objectKey}_Not in stencil database_${generatedCount}`
             pairDiv.classList.add('col-md-3', 'stencil-suggestion');
+            // Add draggable attribute
+            pairDiv.setAttribute('draggable', 'true');
+            // Add ondragstart attribute
+            pairDiv.setAttribute('ondragstart', 'drag(event)');
             pairDiv.appendChild(text);
             pairDiv.appendChild(img);
             // Append the pairDiv to the stencilRow
@@ -175,8 +228,12 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
         }
     }
 }
-    
-            console.log("Images generated: ", generatedCount);
+
+// stencilSection.scrollIntoView({
+//     behavior: 'smooth',
+//     block: 'start' // Aligns the top of the element with the top of the visible area of the scrollable ancestor
+// });
+             console.log("Images generated: ", generatedCount);
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
@@ -196,5 +253,6 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
         textElement.textContent = text;
         return textElement;
     }
+
     </script>
 {% endblock content %}
