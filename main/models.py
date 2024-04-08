@@ -9,6 +9,9 @@ class User(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.username
+
 
 class Session(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
@@ -16,17 +19,22 @@ class Session(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.session
 
-class Data(models.Model):
+
+class Gallery(models.Model):
+    gallery = models.CharField(max_length=12)
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     session = models.ForeignKey(Session, on_delete=models.DO_NOTHING)
-    data = models.JSONField()
+    stencil_data = models.JSONField()
+    image_data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 
 class ApiUsageLog(models.Model):
-    # TODO: log user and session
+    session = models.ForeignKey(Session, on_delete=models.DO_NOTHING)
     google_api_calls = models.IntegerField(null=True, default=0)
     unsplash_api_calls = models.IntegerField(null=True, default=0)
     pexels_api_calls = models.IntegerField(null=True, default=0)

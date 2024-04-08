@@ -18,7 +18,9 @@ class CanvasConsumer(BaseConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         try:
             data = json.loads(text_data)
-            result = await decode_canvas(data)
+            uuid = data["uuid"]
+            canvas_data = data["data"]
+            result = await decode_canvas(event=canvas_data, uuid=uuid)
             result_json = json.dumps(result)
             await self.send(result_json)
         except json.JSONDecodeError as e:
@@ -48,7 +50,7 @@ class ImageConsumer(BaseConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         try:
             data = json.loads(text_data)
-
+            uuid = data["uuid"]
             genMode = data["genMode"]
             genSrc = data["genSrc"]
 
@@ -65,26 +67,26 @@ class ImageConsumer(BaseConsumer):
                 if genMode == "chained":
                     print("UNSPLSH Chained")
                     img_data = await fetch_images_by_keyword_unsplsh(
-                        item_list, chained=True
+                        item_list, chained=True, uuid=uuid
                     )
                     # print(img_data)
                 else:
                     print("UNSPLSH Single")
                     img_data = await fetch_images_by_keyword_unsplsh(
-                        item_list, single=True
+                        item_list, single=True, uuid=uuid
                     )
                     # print(img_data)
             elif genSrc == "pxls":
                 if genMode == "chained":
                     print("PXLS Chained")
                     img_data = await fetch_images_by_keyword_pxls(
-                        item_list, chained=True
+                        item_list, chained=True, uuid=uuid
                     )
                     # print(img_data)
                 else:
                     print("PXLS Single")
                     img_data = await fetch_images_by_keyword_pxls(
-                        item_list, single=True
+                        item_list, single=True, uuid=uuid
                     )
                     # print(img_data)
             else:

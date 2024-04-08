@@ -127,6 +127,8 @@
         <section id="realImages">
             <h1>Real images</h1>
             <div id="realImageGrid"></div>
+            <button id="btnCreateGallery" class="btn btn-primary">Create gallery</button>
+            <p id="galleryMessage" class="text-success"></p>
         </section>
     </div>
     <script defer>
@@ -137,6 +139,7 @@
     let shortlistedStencilsUpdateCount = 0;
     let imageUpdateCount = 0;
     let allItems = {}; // Global JSON object to accumulate all dropped items
+    let imageData = {}
     let wsImage;
 
     // Initialize image WebSocket connection
@@ -434,11 +437,11 @@
         console.log('Real Image Generation Mode:', genImgRealModeValue);
         console.log('Real Image Generation Source:', genImgRealSrcValue);
 
-        wsImage.send(JSON.stringify({ "data": allItems, "genMode": genImgRealModeValue, "genSrc": genImgRealSrcValue }));
+        wsImage.send(JSON.stringify({ "uuid":uuid, "data": allItems, "genMode": genImgRealModeValue, "genSrc": genImgRealSrcValue }));
 
         wsImage.onmessage = function(imageEvent) {
             try {
-                let imageData = JSON.parse(imageEvent.data);
+                imageData = JSON.parse(imageEvent.data);
     
                 let imageDataString = JSON.stringify(imageData, null, 2);
                 imageDataPre.innerHTML = imageDataString;
@@ -499,6 +502,48 @@
             behavior: 'smooth',
             block: 'start' 
             });
+
+            document.getElementById('btnCreateGallery').addEventListener('click', () => {
+                createGallery(allItems, imageData, uuid);
+            });
+            
+    }
+    
+    function createGallery(allItems, imageData) {
+        const data = {
+            allItems: allItems,
+            imageData: imageData,
+            uuid: uuid  // Assuming uuid is available in the scope
+        };
+    
+        fetch(`/gallery/${uuid}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfInput.value  
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json(); // Parse JSON response
+            } else {
+                throw new Error('Failed to save gallery data');
+            }
+        })
+        .then(data => {
+            // Display success message on the page
+            const galleryMessage = document.getElementById('galleryMessage');
+            galleryMessage.textContent = data.message;
+    
+            // Redirect to gallery page after 5 seconds
+            setTimeout(() => {
+                window.location.href = `/gallery/${uuid}/`;
+            }, 5000);
+        })
+        .catch(error => {
+            console.error('Error occurred while saving gallery data:', error);
+        });
     }
     
     

@@ -17,7 +17,7 @@ PER_PAGE = 1
 PAGE = 1
 
 
-async def fetch_images_by_keyword_unsplsh(keyword, chained=False, single=False):
+async def fetch_images_by_keyword_unsplsh(keyword, uuid, chained=False, single=False):
     async with aiohttp.ClientSession() as session:
         results = {}
 
@@ -30,7 +30,7 @@ async def fetch_images_by_keyword_unsplsh(keyword, chained=False, single=False):
             }
             try:
                 async with session.get(UNSPLASH_API_URL, params=params) as response:
-                    await log_api_usage(unsplash_api_calls=1)
+                    await log_api_usage(unsplash_api_calls=1, uuid=uuid)
                     if response.status == 200:
                         data = await response.json()
                         images = []
@@ -66,7 +66,7 @@ async def fetch_images_by_keyword_unsplsh(keyword, chained=False, single=False):
         return results
 
 
-async def fetch_images_by_keyword_pxls(keyword, chained=False, single=False):
+async def fetch_images_by_keyword_pxls(keyword, uuid, chained=False, single=False):
     async with aiohttp.ClientSession() as session:
         results = {}
 
@@ -81,7 +81,7 @@ async def fetch_images_by_keyword_pxls(keyword, chained=False, single=False):
                 async with session.get(
                     PEXELS_API_URL, headers=headers, params=params
                 ) as response:
-                    await log_api_usage(pexels_api_calls=1)
+                    await log_api_usage(pexels_api_calls=1, uuid=uuid)
                     if response.status == 200:
                         data = await response.json()
                         images = []

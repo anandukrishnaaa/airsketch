@@ -3,7 +3,7 @@ import aiohttp
 from ._helper import log_api_usage
 
 
-async def decode_canvas(event):
+async def decode_canvas(event, uuid):
     try:
         # Extract data from the event
         shapes = event["shapes"]
@@ -44,7 +44,7 @@ async def decode_canvas(event):
                         )
 
                         # Increment the Google API usage log
-                        await log_api_usage(google_api_calls=1)
+                        await log_api_usage(google_api_calls=1, uuid=uuid)
 
                         return {
                             "statusCode": 200,

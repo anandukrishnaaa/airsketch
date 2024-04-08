@@ -4,7 +4,8 @@ from . import views
 urlpatterns = [
     path("", views.index, name="index"),
     path("register/", views.register, name="register"),
+    path("playground/<uuid:uuid>/", views.playground, name="playground"),
     path(
-        "playground/<uuid:uuid>/", views.playground, name="playground"
+        "gallery/<uuid:uuid>/", views.gallery, name="gallery"
     ),  # URL pattern for playground.html with UUID parameter
 ]

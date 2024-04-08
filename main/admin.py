@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Session, Data, ApiUsageLog
+from .models import User, Session, Gallery, ApiUsageLog
 
 # Register your models here.
 
@@ -16,13 +16,18 @@ class SessionAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
 
-@admin.register(Data)
+@admin.register(Gallery)
 class DataAdmin(admin.ModelAdmin):
-    list_display = ("user", "session", "data")
+    list_display = ("gallery", "user", "session", "stencil_data", "image_data")
     readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(ApiUsageLog)
 class ApiUsageLog(admin.ModelAdmin):
-    list_display = ("google_api_calls", "unsplash_api_calls", "pexels_api_calls")
+    list_display = (
+        "session",
+        "google_api_calls",
+        "unsplash_api_calls",
+        "pexels_api_calls",
+    )
     readonly_fields = ("created_at", "updated_at")

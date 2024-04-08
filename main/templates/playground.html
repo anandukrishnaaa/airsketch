@@ -1,10 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
    <div class="container">
-      <h1>Welcome to the Playground</h1>
-      <p>Your UUID is: {{ uuid }}</p>
+      <h1>Welcome to the Playground!</h1>
+      <p>You can always return to this playground with the URL.</p>
+      <a href="#" onclick="copySanitizedUrlToClipboard(); return false;">Copy URL to clipboard!</a>
       {% include "playground/canvas.html" with uuid=uuid %}
       {% include "playground/stencil.html" %}
       {% include "playground/image.html" %}
    </div>
+   <script defer>
+      function copySanitizedUrlToClipboard() {
+         // Get the current URL
+         var currentURL = window.location.href;
+     
+         // Remove the hash and query parameters
+         var sanitizedURL = currentURL.split('#')[0].split('?')[0];
+     
+         // Copy the sanitized URL to the clipboard
+         navigator.clipboard.writeText(sanitizedURL)
+             .then(() => {
+                 alert('Playground URL copied to clipboard!');
+             })
+             .catch(err => {
+                 console.error('Failed to copy URL: ', err);
+             });
+     }
+   </script>
 {% endblock content %}

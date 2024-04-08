@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG_MODE")
+DEBUG = os.getenv("DEBUG_MODE", "True")
 
 ALLOWED_HOSTS = []
 
@@ -64,7 +64,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 CORS_ALLOW_METHODS = [
     "DELETE",
@@ -102,7 +102,7 @@ ASGI_APPLICATION = "airsketch.asgi.application"  # For websockets
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / f'{os.getenv("DATABASE_NAME")}.sqlite3',
+        "NAME": BASE_DIR / "database" / f"{os.getenv('DATABASE_NAME', 'dev')}.sqlite3",
     }
 }
 

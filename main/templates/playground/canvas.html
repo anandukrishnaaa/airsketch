@@ -251,7 +251,7 @@
         
             console.log('Data sent to server:', canvasData);
         
-            wsCanvas.send(JSON.stringify(canvasData));
+            wsCanvas.send(JSON.stringify({"uuid": uuid,"data": canvasData}));
         }
         
         function clearDrawingCanvas() {

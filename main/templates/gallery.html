@@ -1,4 +1,76 @@
-<!-- templates/main/gallery.html -->
 {% extends "base.html" %}
 {% block content %}
+    <style>
+    .uniform-image {
+        height: 200px; /* Adjust based on your preference */
+        width: 100%;
+        object-fit: cover; /* This ensures the image covers the area without stretching */
+    }
+
+    .card-title, .card-text {
+        max-height: 3.2em; /* Adjust based on your font size */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    </style>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-4">{{ username }}'s Gallery</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Stencil Gallery</h2>
+            </div>
+        </div>
+        <div class="row">
+            {% for key, item in stencil_data.items %}
+                <div class="col-md-2 col-sm-4 col-6">
+                    <div class="card mb-4 shadow-sm">
+                        <img src="{{ item.src }}"
+                             class="card-img-top uniform-image"
+                             alt="{{ item.alt }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.item_name }}</h5>
+                            <p class="card-text">{{ item.alt }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Image Gallery</h2>
+            </div>
+        </div>
+        <div class="row">
+            {% for category, images in image_data.items %}
+                {% for image in images %}
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card mb-4 shadow-sm">
+                            <img src="{{ image.regular }}"
+                                 class="card-img-top uniform-image"
+                                 alt="{{ image.alt_description }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ category }}</h5>
+                                <p class="card-text">{{ image.description }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">By {{ image.username }}</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        <div>
+            <span>This was created using airsketch! Try it out <a href="{% url "index" %}">here</a></span>
+        </div>
+    </div>
 {% endblock content %}
