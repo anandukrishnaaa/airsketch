@@ -1,5 +1,6 @@
 import json
 import aiohttp
+from ._helper import log_api_usage
 
 
 async def decode_canvas(event):
@@ -41,6 +42,9 @@ async def decode_canvas(event):
                             .split("SCORESINKS: ")[1]
                             .split(" Service_Recognize:")[0]
                         )
+
+                        # Increment the Google API usage log
+                        await log_api_usage(google_api_calls=1)
 
                         return {
                             "statusCode": 200,

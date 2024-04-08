@@ -3,6 +3,7 @@
     img {
         pointer-events: none;
        }
+
        
     </style>
     <div class="container">
@@ -11,7 +12,7 @@
             <p>Output from stencil</p>
         </details>
         <section id="stencilSection">
-            <h1>Stencil output</h1>
+            <h1>Stencil output ✏️</h1>
             <div id="stencilContainer" class="container">
                 <div class="row" id="stencilRow"></div>
             </div>
@@ -33,11 +34,31 @@
                                 <div id="updateCounter" class="text-muted">Updates: 0</div>
                                 <div id="lastUpdateTime" class="text-muted">Last update: --:--</div>
                                 <pre id="dataDisplayPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                                <a href="#" onclick="copyContent('dataDisplayPre')">Copy canvas websocket debug content to clipboard</a>
+                                <p id="copySuccessMessageData" class="text-success"></p>
                             </div>
                             <div class="row">
                                 <div id="stencilUpdateCounter" class="text-muted">Updates: 0</div>
                                 <div id="stencilLastUpdateTime" class="text-muted">Last update: --:--</div>
                                 <pre id="stencilDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                                <a href="#" onclick="copyContent('stencilDataPre')">Copy stencil websocket debug content to clipboard</a>
+                                <p id="copySuccessMessageStencil" class="text-success"></p>
+                            </div>
+                            <div class="row">
+                                <div id="shortlistedStencilsUpdateCounter" class="text-muted">Updates: 0</div>
+                                <div id="shortlistedStencilsLastUpdateTime" class="text-muted">Last update: --:--</div>
+                                <pre name="shortlistedStencils"
+                                     id="shortlistedStencils"
+                                     class="bg-light p-3 rounded">Waiting for data</pre>
+                                <a href="#" onclick="copyContent('shortlistedStencils')">Copy shortlist debug content to clipboard</a>
+                                <p id="copySuccessMessageShortlisted" class="text-success"></p>
+                            </div>
+                            <div class="row">
+                                <div id="imageUpdateCounter" class="text-muted">Updates: 0</div>
+                                <div id="imageLastUpdateTime" class="text-muted">Last update: --:--</div>
+                                <pre id="imageDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                                <a href="#" onclick="copyContent('imageDataPre')">Copy image websocket debug content to clipboard</a>
+                                <p id="copySuccessMessageImage" class="text-success"></p>
                             </div>
                         </div>
                     </div>
@@ -66,13 +87,29 @@
     const stencilLastUpdateTime = document.getElementById('stencilLastUpdateTime');
     const stencilContainer = document.getElementById('stencilContainer');
 
-        
-
     // Initialize the offcanvas
-    var offcanvasElementList = [].slice.call(document.querySelectorAll('.offcanvas'))
-    var offcanvasList = offcanvasElementList.map(function (offcanvasEl) {
+    let offcanvasElementList = [].slice.call(document.querySelectorAll('.offcanvas'))
+    let offcanvasList = offcanvasElementList.map(function (offcanvasEl) {
       return new bootstrap.Offcanvas(offcanvasEl)
     })
+
+    function copyContent(elementId) {
+        // Get the text content of the specified pre element
+        let text = document.getElementById(elementId).textContent;
+        // Use the Clipboard API to copy the text
+        navigator.clipboard.writeText(text).then(() => {
+            // Display success message under the corresponding button
+            let successMessageElementId = 'copySuccessMessage' + elementId.charAt(0).toUpperCase() + elementId.slice(1);
+            document.getElementById(successMessageElementId).textContent = `${elementId} content was copied to clipboard!`;
+            // Optionally, clear the message after a delay
+            setTimeout(() => {
+                document.getElementById(successMessageElementId).textContent = '';
+            }, 6000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
+    
 
     // Initialize stencil WebSocket connection
     wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
@@ -228,11 +265,6 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
         }
     }
 }
-
-// stencilSection.scrollIntoView({
-//     behavior: 'smooth',
-//     block: 'start' // Aligns the top of the element with the top of the visible area of the scrollable ancestor
-// });
              console.log("Images generated: ", generatedCount);
         } catch (error) {
             console.error('Error parsing JSON:', error);

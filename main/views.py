@@ -2,7 +2,8 @@
 
 import uuid
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse
+from django.urls import reverse
 from . import models
 from . import forms
 import json
@@ -43,7 +44,4 @@ def playground(request, uuid):
         "playground.html",
         {"uuid": uuid, "username": user.username, "email": user.email},
     )
-    response.set_cookie("username", user.username)
-    response.set_cookie("is_author", True)
-    response.set_cookie("is_editable", True)
     return response

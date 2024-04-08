@@ -23,3 +23,12 @@ class Data(models.Model):
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class ApiUsageLog(models.Model):
+    # TODO: log user and session
+    google_api_calls = models.IntegerField(null=True, default=0)
+    unsplash_api_calls = models.IntegerField(null=True, default=0)
+    pexels_api_calls = models.IntegerField(null=True, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

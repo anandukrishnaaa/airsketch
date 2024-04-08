@@ -15,6 +15,7 @@
             backdrop-filter: blur(10px); /* Apply blur effect */
             border-radius: 20px; /* Rounded corners */
         }
+
         #dropzoneResults {
             top: 20px;
             display: none;
@@ -27,42 +28,155 @@
             z-index: 999; /* Lower than dropzone */
         }
         
-/* For WebKit-based browsers */
-#dropzoneResults::-webkit-scrollbar {
-    width: 2px; /* Make the scrollbar thinner */
-}
+        /* For WebKit-based browsers */
+        #dropzoneResults::-webkit-scrollbar {
+            width: 2px; /* Make the scrollbar thinner */
+        }
 
-#dropzoneResults::-webkit-scrollbar-track {
-    background: transparent; /* Transparent track */
-}
+        #dropzoneResults::-webkit-scrollbar-track {
+            background: transparent; /* Transparent track */
+        }
 
-#dropzoneResults::-webkit-scrollbar-thumb {
-    background-color: #c5c5c5; /* Light grey thumb */
-    border-radius: 2px; /* Rounded corners */
-}
+        #dropzoneResults::-webkit-scrollbar-thumb {
+            background-color: #c5c5c5; /* Light grey thumb */
+            border-radius: 2px; /* Rounded corners */
+        }
+
+        #savedItemsGrid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between; /* Adjust as needed for spacing */
+        }
+        
+        #savedItemsGrid > * {
+            flex: 1 0 25%; /* flex-grow, flex-shrink, flex-basis */
+            margin: 5px; /* Adjust margin as needed */
+        }
+
+        #realImageGrid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between; /* Adjust as needed for spacing */
+        }
+        
+        #realImageGrid > * {
+            flex: 1 0 25%; /* flex-grow, flex-shrink, flex-basis */
+            margin: 5px; /* Adjust margin as needed */
+        }
         
         
     </style>
-    <div id="dropzone"
-         class="dropzone  rounded-4"
-         style="display: none;
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 200px;
-                height: 200px;
-                border: 1px solid black">
-        <p style="text-align: center; margin-top: 30px;">Drop here</p>
+    <div class="container">
+        <section id="drozoneSection">
+            <!-- Code to handle floating dropzone for stencils. -->
+            <div id="dropzone"
+                 class="dropzone rounded-4"
+                 style="display: none;
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        width: 200px;
+                        height: 200px;
+                        border: 1px solid black">
+                <p style="text-align: center; margin-top: 30px;">Drop here</p>
+            </div>
+            <div id="dropzoneResults"
+                 class="list-group"
+                 style="display: none;
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        width: 200px"></div>
+        </section>
+        <section id="savedSection">
+            <h1>Saved items 💾</h1>
+            <!-- Code to handle Save action for shortlisted stencils. -->
+            <div class="savedImgContainer">
+                <div id="savedItemsGrid"></div>
+                <div>
+                    <button id="btnGenerateRealImg" class="btn btn-success">Generate Real Image</button>
+                </div>
+                <details>
+                    <summary>Settings</summary>
+                    <p>Real Image generation mode</p>
+                    <fieldset>
+                        <legend>Real Image Generation Mode</legend>
+                        <div>
+                            <input type="radio"
+                                   id="modeSingle"
+                                   name="genImgRealMode"
+                                   value="single"
+                                   checked>
+                            <label for="modeSingle">Single</label>
+                            <input type="radio" id="modeChained" name="genImgRealMode" value="chained">
+                            <label for="modeChained">Chained</label>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Real Image Generation Source</legend>
+                        <div>
+                            <input type="radio" id="srcUnsplsh" name="genImgRealSrc" value="unsplsh">
+                            <label for="srcUnsplsh">UNSPLSH</label>
+                            <input type="radio" id="srcPxls" name="genImgRealSrc" value="pxls" checked>
+                            <label for="srcPxls">PXLS</label>
+                        </div>
+                    </fieldset>
+                </details>
+            </div>
+        </section>
+        <section id="realImages">
+            <h1>Real images</h1>
+            <div id="realImageGrid"></div>
+        </section>
     </div>
-    <div id="dropzoneResults"
-         class="list-group"
-         style="display: none;
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 200px"></div>
     <script defer>
+    const shortlistedStencilsUpdateCounter = document.getElementById('shortlistedStencilsUpdateCounter');
+    const shortlistedStencilsLastUpdateTime = document.getElementById('shortlistedStencilsLastUpdateTime');
+    const imageUpdateCounter = document.getElementById('imageUpdateCounter');
+    const imageLastUpdateTime = document.getElementById('imageLastUpdateTime');
+    let shortlistedStencilsUpdateCount = 0;
+    let imageUpdateCount = 0;
     let allItems = {}; // Global JSON object to accumulate all dropped items
+    let wsImage;
+
+    // Initialize image WebSocket connection
+    wsImage = new WebSocket(`ws://127.0.0.1:3000/ws/image/${uuid}`);
+
+    wsImage.onopen = function(imageEvent) {
+        console.log('image WebSocket connection opened');
+    };
+    wsImage.onclose = function(imageEvent) {
+        console.log('image WebSocket connection closed');
+        
+        // Reconnect logic
+        if (reconnectAttempts < maxReconnectAttempts) {
+            setTimeout(function() {
+                // Attempt to reconnect
+                try {
+                    wsImage = new WebSocket(`ws://127.0.0.1:3000/ws/image/${uuid}`);
+                    
+                    // Reset reconnectAttempts if reconnection is successful
+                    wsImage.onopen = function(event) {
+                        console.log('image WebSocket reconnected successfully');
+                        reconnectAttempts = 0;
+                    };
+                    
+                    // Handle errors that occur during reconnection
+                    wsImage.onerror = function(error) {
+                        console.error('image WebSocket reconnection error:', error);
+                        // Increment reconnectAttempts on reconnection failure
+                        reconnectAttempts++;
+                    };
+                } catch (error) {
+                    console.error('Error occurred while attempting to reconnect:', error);
+                    // Increment reconnectAttempts on reconnection failure
+                    reconnectAttempts++;
+                }
+            }, 3000); // Reconnect after 3 seconds (adjust as needed)
+        } else {
+            console.log(`Maximum reconnect attempts (${maxReconnectAttempts}) reached. Stopping reconnect attempts.`);
+        }
+    };
 
     function allowDrop(event) {
         event.preventDefault();
@@ -73,7 +187,6 @@
         let itemName = event.target.querySelector('p').textContent;
         let imgSrc = event.target.querySelector('img').src;
         let imgAlt = event.target.querySelector('img').alt;
-        
         let itemDetails = {
             "item_name": itemName,
             "src": imgSrc,
@@ -82,6 +195,7 @@
         
         event.dataTransfer.setData("text", JSON.stringify({[itemId]: itemDetails}));
     }
+
     function updateButtonsState() {
         // Check if there are any items left in the allItems object
         if (Object.keys(allItems).length === 0) {
@@ -183,7 +297,7 @@
         
         // Create a "Save" button
         let saveButton = document.createElement('button');
-        saveButton.textContent = 'Save';
+        saveButton.textContent = 'Save all';
         saveButton.id = 'saveBtn';
         saveButton.className = "btn btn-success"
         saveButton.style.marginRight = '10px'; // Add some space between the buttons
@@ -225,10 +339,25 @@
     document.getElementById('dropzoneResults').addEventListener('click', function(event) {
         // Check if the clicked element is the deleteBtn
         if (event.target.id === 'deleteBtn') {
+            console.log("Delete triggered!")
+
             // Proceed with the deletion logic
             deleteSelectedItems();
         }
+
+              // Check if the clicked element is the saveBtn
+    if (event.target.id === 'saveBtn') {
+        console.log("Save triggered!")
+        console.log(allItems)
+        shortlistedStencilsUpdateCount++;
+        shortlistedStencilsUpdateCounter.textContent = `Updates: ${shortlistedStencilsUpdateCount}`;
+        shortlistedStencilsLastUpdateTime.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        shortlistedStencils.textContent  = JSON.stringify(allItems);
+        renderSaved(allItems)
+    }
+       
     });
+
 
     function deleteSelectedItems() {
         // Select all checked checkboxes within dropzoneResults, excluding the selectAllCheckbox
@@ -255,5 +384,123 @@
             document.getElementById('selectAllCheckbox').checked = false;
         }
     }
+    function renderSaved(data) {
+        // Get the container element
+        const container = document.getElementById('savedItemsGrid');
+        
+        // Clear the container before adding new items
+        container.innerHTML = '';
+        
+        // Iterate over all items
+        for (let key in data) {
+            const item = data[key];
+            
+            // Create a div to wrap the img element
+            const imgWrapper = document.createElement('div');
+            imgWrapper.style.flex = '1 0 auto'; // This allows the div to grow and shrink but not to be smaller than its content
+            
+            // Create an <img> element for each item
+            const img = document.createElement('img');
+            img.src = item.src; // Set the source of the image
+            img.alt = item.alt; // Set the alt text of the image
+            img.loading = "lazy";
+            
+            // Append the image to the div
+            imgWrapper.appendChild(img);
+            
+            // Append the div to the container
+            container.appendChild(imgWrapper);
+            savedItemsGrid.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start' 
+            });
+        }
+        generateRealImage()
+    }
+
+
+
+    function generateRealImage(){
+    // Select the "Generate Real Image" button
+    const generateButton = document.getElementById("btnGenerateRealImg")
+
+    // Add a click event listener to the button
+    generateButton.addEventListener('click', function() {
+        // Get the selected values of the "Real Image generation mode" and "Real Image generation source"
+        const genImgRealModeValue = document.querySelector('input[name="genImgRealMode"]:checked').value;
+        const genImgRealSrcValue = document.querySelector('input[name="genImgRealSrc"]:checked').value;
+
+        // Log the values to the console
+        console.log('Real Image Generation Mode:', genImgRealModeValue);
+        console.log('Real Image Generation Source:', genImgRealSrcValue);
+
+        wsImage.send(JSON.stringify({ "data": allItems, "genMode": genImgRealModeValue, "genSrc": genImgRealSrcValue }));
+
+        wsImage.onmessage = function(imageEvent) {
+            try {
+                let imageData = JSON.parse(imageEvent.data);
+    
+                let imageDataString = JSON.stringify(imageData, null, 2);
+                imageDataPre.innerHTML = imageDataString;
+    
+                imageUpdateCount++;
+                imageUpdateCounter.textContent = `Updates: ${imageUpdateCount}`;
+                imageLastUpdateTime.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+
+                renderImages(imageData)
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        };
+    });
+    }
+
+    function renderImages(data) {
+        console.log(data)
+        // Get the container element
+        const container = document.getElementById('realImageGrid');
+        
+        // Clear the container before adding new items
+        container.innerHTML = '';
+        
+        // Iterate over all categories
+        for (let category in data) {
+            const images = data[category];
+            
+            // Create a div to wrap the images for each category
+            const categoryWrapper = document.createElement('div');
+            categoryWrapper.style.display = 'flex';
+            categoryWrapper.style.flexWrap = 'wrap';
+            categoryWrapper.style.justifyContent = 'space-between';
+            
+            // Iterate over all images in the current category
+            images.forEach(image => {
+                // Create a div to wrap the img element
+                const imgWrapper = document.createElement('div');
+                imgWrapper.style.flex = '1 0 auto'; // This allows the div to grow and shrink but not to be smaller than its content
+                
+                // Create an <img> element for each image
+                const img = document.createElement('img');
+                img.src = image.regular; // Set the source of the image
+                img.alt = image.description; // Set the alt text of the image
+                img.loading = "lazy";
+                
+                // Append the image to the div
+                imgWrapper.appendChild(img);
+                
+                // Append the div to the category wrapper
+                categoryWrapper.appendChild(imgWrapper);
+            });
+            
+            // Append the category wrapper to the container
+            container.appendChild(categoryWrapper);
+        }
+        realImageGrid.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start' 
+            });
+    }
+    
+    
     </script>
 {% endblock content %}

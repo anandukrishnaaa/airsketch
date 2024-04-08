@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Session, Data
+from .models import User, Session, Data, ApiUsageLog
 
 # Register your models here.
 
@@ -19,4 +19,10 @@ class SessionAdmin(admin.ModelAdmin):
 @admin.register(Data)
 class DataAdmin(admin.ModelAdmin):
     list_display = ("user", "session", "data")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(ApiUsageLog)
+class ApiUsageLog(admin.ModelAdmin):
+    list_display = ("google_api_calls", "unsplash_api_calls", "pexels_api_calls")
     readonly_fields = ("created_at", "updated_at")
