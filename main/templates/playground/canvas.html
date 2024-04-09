@@ -74,11 +74,11 @@
     </div>
 
     <!-- canvas actions using button -->
-    <p id="inputMethodMessage" class="text-center">Select drawing mode from below</p>
-    <div class="d-flex align-items-center justify-content-center pt-5">
+    <p id="inputMethodMessage" class="text-center pt-5">Select drawing mode from below</p>
+    <!-- <div class="d-flex align-items-center justify-content-center pt-5">
         <h2>Select Brush Color:</h2>
         <button class="btn btn-white"><input id="brushcolor" type="color" name="brushcolor" value="#000000"></button>
-    </div>
+    </div> -->
     <div class=" d-flex justify-content-around p-5">
         <button id="toggleButton" class="btn btn-primary d-flex align-items-center gap-2">Draw using camera <i
                 class='bx bx-camera'></i></button>
@@ -105,12 +105,32 @@
                 data-bs-target="#debugStatsOffcanvas">Show Debug Stats</button>
         </div>
     </div> -->
-    <p id="inputMethodMessage" class="text-center">Start drawing!</p>
+    <!-- <p id="inputMethodMessage" class="text-center">Start drawing!</p> -->
     <div id="statusMessage" class="text-center"></div>
     <details>
         <summary>Advanced controls</summary>
-        <label for="brushcolor">Select Brush Color:</label>
-        <input id="brushcolor" type="color" name="brushcolor" value="#000000">
+        <div class="d-flex justify-content-around align-items-center p-5">
+            <div>
+                <label for="brushcolor">Select Brush Color:</label>
+                <input id="brushcolor" type="color" name="brushcolor" value="#000000">
+            </div>
+            
+            <div>
+                <label for="brushcolor">Maximum Inputs:</label>
+                <input id="maxGenerationsInput" type="text" name="maxGenerationsInput">
+            </div>
+
+        </div>
+        <div class="d-flex justify-content-around align-items-center p-3">
+            <div>
+                <button class="btn btn-dark d-flex align-items-center gap-2" id="skipSameBtn">Skip Same <i class='bx bx-skip-next-circle' ></i></button>
+            </div>
+            <div>
+                <button class="btn btn-dark d-flex align-items-center gap-2" id="strictHasImgBtn">Strict Has Image <i class='bx bx-image-alt' ></i></button>
+            </div>
+
+        </div>
+
     </details>
 </div>
 {% csrf_token %}
@@ -153,12 +173,6 @@
     wsCanvas.onopen = function (canvasEvent) {
         console.log('canvas WebSocket connection opened');
     };
-
-    // event for background disappear of canvas
-    mouseDrawToggle.addEventListener('click', () => {
-        // make the draw canvas background from pen image to transparent
-        drawCanvas.style.background = 'transparent';
-    })
 
 
     wsCanvas.onclose = function (canvasEvent) {
@@ -222,6 +236,7 @@
 
     async function startCamera() {
         try {
+            drawCanvas.style.background = 'transparent';
             const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
             video.srcObject = stream;
             isCameraOn = true;
@@ -367,6 +382,7 @@
 
     // Mouse drawing functionality
     mouseDrawToggle.addEventListener('click', function () {
+        drawCanvas.style.background = 'transparent';
         isMouseDrawing = !isMouseDrawing;
         this.textContent = isMouseDrawing ? 'Stop Drawing with Mouse' : 'Draw using mouse';
         updateInputMethodMessage(isMouseDrawing ? 'mouse 🖱️' : 'hand 🤚'); // Update the message based on the current state

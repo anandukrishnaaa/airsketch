@@ -129,42 +129,45 @@
         <!-- Code to handle Save action for shortlisted stencils. -->
         <div class="savedImgContainer container">
             <div id="savedItemsGrid" class="row"></div>
-            <div class="text-center">
-                <button id="btnGenerateRealImg" class="btn btn-outline-success">Generate Real Image <i
+            <div class="text-center pt-5">
+                <button id="btnGenerateRealImg" class="btn btn-outline-success ">Generate Real Image <i
                         class='bx bxs-cog'></i></button>
             </div>
             <details>
                 <summary>Settings</summary>
-                <p>Real Image generation mode</p>
-                <fieldset>
-                    <legend>Select Mode</legend>
-                    <div>
-                        <input type="radio" id="modeSingle" name="genImgRealMode" value="single" checked>
-                        <label for="modeSingle">Single</label>
-                        <input type="radio" id="modeChained" name="genImgRealMode" value="chained">
-                        <label for="modeChained">Chained</label>
-                    </div>
-                </fieldset>
-                <fieldset>
-                    <legend>Select Source</legend>
-                    <div>
-                        <input type="radio" id="srcUnsplsh" name="genImgRealSrc" value="unsplsh">
-                        <label for="srcUnsplsh">UNSPLSH</label>
-                        <input type="radio" id="srcPxls" name="genImgRealSrc" value="pxls" checked>
-                        <label for="srcPxls">PXLS</label>
-                    </div>
-                </fieldset>
+                <h3 class="text-center pt-3">Real Image generation mode</h3>
+                <div class="d-flex justify-content-around align-items-center">
+                    <fieldset>
+                        <legend>Select Mode</legend>
+                        <div>
+                            <input type="radio" id="modeSingle" name="genImgRealMode" value="single" checked>
+                            <label for="modeSingle">Single</label>
+                            <input type="radio" id="modeChained" name="genImgRealMode" value="chained">
+                            <label for="modeChained">Chained</label>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Select Source</legend>
+                        <div>
+                            <input type="radio" id="srcUnsplsh" name="genImgRealSrc" value="unsplsh">
+                            <label for="srcUnsplsh">UNSPLSH</label>
+                            <input type="radio" id="srcPxls" name="genImgRealSrc" value="pxls" checked>
+                            <label for="srcPxls">PXLS</label>
+                        </div>
+                    </fieldset>
+                </div>
+
             </details>
         </div>
     </section>
     <section id="realImages">
         <h1 class="text-center py-5 text-uppercase">Real images</h1>
-       <!-- div for real images  -->
+        <!-- div for real images  -->
         <div class="container">
             <div id="realImageGrid" class="row"></div>
         </div>
 
-        <button id="btnCreateGallery" class="btn btn-primary">Create gallery</button>
+        <button id="btnCreateGallery" class="btn btn-primary mt-5">Create gallery</button>
         <p id="galleryMessage" class="text-success"></p>
     </section>
 </div>
@@ -387,6 +390,10 @@
 
         // Check if the clicked element is the saveBtn
         if (event.target.id === 'saveBtn') {
+
+            // enable section when save all is clicked
+            document.getElementById('savedSection').style.display = 'block'
+
             console.log("Save triggered!")
             console.log(allItems)
             shortlistedStencilsUpdateCount++;
@@ -471,6 +478,11 @@
             const genImgRealModeValue = document.querySelector('input[name="genImgRealMode"]:checked').value;
             const genImgRealSrcValue = document.querySelector('input[name="genImgRealSrc"]:checked').value;
 
+            
+            // display realImages after clicking the generate button
+            document.getElementById('realImages').style.display = 'block'
+
+
             // Log the values to the console
             console.log('Real Image Generation Mode:', genImgRealModeValue);
             console.log('Real Image Generation Source:', genImgRealSrcValue);
@@ -519,11 +531,12 @@
             images.forEach(image => {
                 // Create a div to wrap the img element
                 const imgWrapper = document.createElement('div');
-                imgWrapper.classList.add('col-md-4', 'real-image
+                imgWrapper.classList.add('col-md-4', 'real-image');
                 // imgWrapper.style.flex = '1 0 auto'; // This allows the div to grow and shrink but not to be smaller than its content
 
                 // Create an <img> element for each image
                 const img = document.createElement('img');
+                img.classList.add('real-image-img');
                 img.src = image.regular; // Set the source of the image
                 img.alt = image.description; // Set the alt text of the image
                 img.loading = "lazy";

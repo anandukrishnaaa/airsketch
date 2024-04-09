@@ -1,17 +1,48 @@
 <!-- templates/main/index.html -->
 {% extends "base.html" %}
 {% block content %}
-    <h1>User Registration</h1>
-    <form method="post" action="{% url 'register' %}">
+
+<style>
+    .register-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: url('../static/images/registerBg.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    .form-box {
+        border-radius: 10px;
+        /* border: 1px solid #00000053; */
+        box-shadow: 1px 1px 20px #00000053;
+        width: 400px;
+        /* height: 300px; */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 40px 20px;
+    }
+    .form-box input{
+        width: 80%;
+        border: none;
+        outline: none;
+        border-bottom: 1px solid #00000053;    
+            }
+</style>
+<div class="register-container">
+    <form method="post" action="{% url 'register' %}" class="form-box">
+        <h3 class="pb-4">User Registration</h3>
         {% csrf_token %}
-        <label for="username">Username:</label>
-        <br>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="email">Email:</label>
-        <br>
-        <input type="email" id="email" name="email" required>
-        <br>
-        <input type="submit" value="Register">
+        <input type="text" id="username" name="username" placeholder="Username" required>
+        <input type="email" id="email" name="email" placeholder="email" required>
+        <input type="submit" value="Register" class="btn btn-primary mt-3">
     </form>
+</div>
+
 {% endblock content %}
