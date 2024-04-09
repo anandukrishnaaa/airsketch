@@ -1,71 +1,99 @@
 {% block content %}
-    <style>
+<style>
     img {
         pointer-events: none;
-       }
+    }
 
-    </style>
-    <div class="container">
-        <details>
+    #stencilSection {
+        transition: .3s ease-in-out;
+        display: none;
+        padding: 3rem 0;
+    }
+
+    #stencilSection {
+        transition: .3s ease-in-out;
+        display: none;
+        padding: 3rem 0;
+        text-align: center;
+    }
+
+    .stencil-suggestion {
+        cursor: pointer;
+        text-transform: uppercase;
+        text-align: center;
+        margin: 1rem 1rem;
+        padding: 1rem 0;
+        box-shadow: 1px 1px 20px #0000004e;
+        border-radius: 10px;
+        transition: .3s ease-in-out;
+        max-width: 200px;
+    }
+
+    .stencil-suggestion:hover {
+        scale: .9;
+
+    }
+</style>
+<div class="container">
+    <!-- <details>
             <summary>Output</summary>
             <p>Output from stencil</p>
-        </details>
-        <section id="stencilSection">
-            <h1>Stencil output ✏️</h1>
-            <div id="stencilContainer" class="container">
-                <div class="row" id="stencilRow"></div>
+        </details> -->
+    <section id="stencilSection">
+        <h1 class="text-center py-5">STENCIL OUTPUT <i class='bx bx-images'></i></h1>
+        <div id="stencilContainer" class="container">
+            <div class="row" id="stencilRow"></div>
+        </div>
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="debugStatsOffcanvas"
+            aria-labelledby="debugStatsOffcanvasLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="debugStatsOffcanvasLabel">Debug Stats</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"
+                    aria-label="Close"></button>
             </div>
-            <div class="offcanvas offcanvas-end"
-                 tabindex="-1"
-                 id="debugStatsOffcanvas"
-                 aria-labelledby="debugStatsOffcanvasLabel">
-                <div class="offcanvas-header">
-                    <h5 class="offcanvas-title" id="debugStatsOffcanvasLabel">Debug Stats</h5>
-                    <button type="button"
-                            class="btn-close text-reset"
-                            data-bs-dismiss="offcanvas"
-                            aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body">
-                    <div id="debugStats">
-                        <div class="container">
-                            <div class="row">
-                                <div id="updateCounter" class="text-muted">Updates: 0</div>
-                                <div id="lastUpdateTime" class="text-muted">Last update: --:--</div>
-                                <pre id="dataDisplayPre" class="bg-light p-3 rounded">Waiting for data</pre>
-                                <a href="#" onclick="copyContent('dataDisplayPre')">Copy canvas websocket debug content to clipboard</a>
-                                <p id="copySuccessMessagedataDisplayPre" class="text-success"></p>
-                            </div>
-                            <div class="row">
-                                <div id="stencilUpdateCounter" class="text-muted">Updates: 0</div>
-                                <div id="stencilLastUpdateTime" class="text-muted">Last update: --:--</div>
-                                <pre id="stencilDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
-                                <a href="#" onclick="copyContent('stencilDataPre')">Copy stencil websocket debug content to clipboard</a>
-                                <p id="copySuccessMessagestencilDataPre" class="text-success"></p>
-                            </div>
-                            <div class="row">
-                                <div id="shortlistedStencilsUpdateCounter" class="text-muted">Updates: 0</div>
-                                <div id="shortlistedStencilsLastUpdateTime" class="text-muted">Last update: --:--</div>
-                                <pre name="shortlistedStencils"
-                                     id="shortlistedStencils"
-                                     class="bg-light p-3 rounded">Waiting for data</pre>
-                                <a href="#" onclick="copyContent('shortlistedStencils')">Copy shortlist debug content to clipboard</a>
-                                <p id="copySuccessMessageshortlistedStencils" class="text-success"></p>
-                            </div>
-                            <div class="row">
-                                <div id="imageUpdateCounter" class="text-muted">Updates: 0</div>
-                                <div id="imageLastUpdateTime" class="text-muted">Last update: --:--</div>
-                                <pre id="imageDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
-                                <a href="#" onclick="copyContent('imageDataPre')">Copy image websocket debug content to clipboard</a>
-                                <p id="copySuccessMessageimageDataPre" class="text-success"></p>
-                            </div>
+            <div class="offcanvas-body">
+                <div id="debugStats">
+                    <div class="container">
+                        <div class="row">
+                            <div id="updateCounter" class="text-muted">Updates: 0</div>
+                            <div id="lastUpdateTime" class="text-muted">Last update: --:--</div>
+                            <pre id="dataDisplayPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                            <a href="#" onclick="copyContent('dataDisplayPre')">Copy canvas websocket debug content to
+                                clipboard</a>
+                            <p id="copySuccessMessagedataDisplayPre" class="text-success"></p>
+                        </div>
+                        <div class="row">
+                            <div id="stencilUpdateCounter" class="text-muted">Updates: 0</div>
+                            <div id="stencilLastUpdateTime" class="text-muted">Last update: --:--</div>
+                            <pre id="stencilDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                            <a href="#" onclick="copyContent('stencilDataPre')">Copy stencil websocket debug content to
+                                clipboard</a>
+                            <p id="copySuccessMessagestencilDataPre" class="text-success"></p>
+                        </div>
+                        <div class="row">
+                            <div id="shortlistedStencilsUpdateCounter" class="text-muted">Updates: 0</div>
+                            <div id="shortlistedStencilsLastUpdateTime" class="text-muted">Last update: --:--</div>
+                            <pre name="shortlistedStencils" id="shortlistedStencils"
+                                class="bg-light p-3 rounded">Waiting for data</pre>
+                            <a href="#" onclick="copyContent('shortlistedStencils')">Copy shortlist debug content to
+                                clipboard</a>
+                            <p id="copySuccessMessageshortlistedStencils" class="text-success"></p>
+                        </div>
+                        <div class="row">
+                            <div id="imageUpdateCounter" class="text-muted">Updates: 0</div>
+                            <div id="imageLastUpdateTime" class="text-muted">Last update: --:--</div>
+                            <pre id="imageDataPre" class="bg-light p-3 rounded">Waiting for data</pre>
+                            <a href="#" onclick="copyContent('imageDataPre')">Copy image websocket debug content to
+                                clipboard</a>
+                            <p id="copySuccessMessageimageDataPre" class="text-success"></p>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
-    </div>
-    <script defer>
+        </div>
+    </section>
+</div>
+<script defer>
     let updateCount = 0;
     let wsStencil; // WebSocket object
 
@@ -89,7 +117,7 @@
     // Initialize the offcanvas
     let offcanvasElementList = [].slice.call(document.querySelectorAll('.offcanvas'))
     let offcanvasList = offcanvasElementList.map(function (offcanvasEl) {
-      return new bootstrap.Offcanvas(offcanvasEl)
+        return new bootstrap.Offcanvas(offcanvasEl)
     })
 
     function copyContent(elementId) {
@@ -110,34 +138,34 @@
             console.error('Failed to copy: ', err);
         });
     }
-    
-    
-    
+
+
+
 
     // Initialize stencil WebSocket connection
     wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
 
-    wsStencil.onopen = function(stencilEvent) {
+    wsStencil.onopen = function (stencilEvent) {
         console.log('stencil WebSocket connection opened');
     };
-    wsStencil.onclose = function(stencilEvent) {
+    wsStencil.onclose = function (stencilEvent) {
         console.log('stencil WebSocket connection closed');
-        
+
         // Reconnect logic
         if (reconnectAttempts < maxReconnectAttempts) {
-            setTimeout(function() {
+            setTimeout(function () {
                 // Attempt to reconnect
                 try {
                     wsStencil = new WebSocket(`ws://127.0.0.1:3000/ws/stencil/${uuid}`);
-                    
+
                     // Reset reconnectAttempts if reconnection is successful
-                    wsStencil.onopen = function(event) {
+                    wsStencil.onopen = function (event) {
                         console.log('stencil WebSocket reconnected successfully');
                         reconnectAttempts = 0;
                     };
-                    
+
                     // Handle errors that occur during reconnection
-                    wsStencil.onerror = function(error) {
+                    wsStencil.onerror = function (error) {
                         console.error('stencil WebSocket reconnection error:', error);
                         // Increment reconnectAttempts on reconnection failure
                         reconnectAttempts++;
@@ -153,7 +181,7 @@
         }
     };
 
-    wsCanvas.onmessage = function(canvasEvent) {
+    wsCanvas.onmessage = function (canvasEvent) {
         try {
             let jsonData = JSON.parse(canvasEvent.data);
             wsStencil.send(JSON.stringify(jsonData.body));
@@ -169,111 +197,115 @@
         }
     };
 
-    wsStencil.onmessage = function(stencilEvent) {
+    wsStencil.onmessage = function (stencilEvent) {
         try {
             let stencilData = JSON.parse(stencilEvent.data);
             console.log(stencilData);
-    
+
             let stencilDataString = JSON.stringify(stencilData, null, 2);
             stencilDataPre.innerHTML = stencilDataString;
-    
+
             updateCount++;
             stencilUpdateCounter.textContent = `Updates: ${updateCount}`;
             stencilLastUpdateTime.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
-    
+
             // Clear existing elements in stencilContainer
             stencilRow.innerHTML = '';
-    
+
             // Determine if all elements should be generated
             let generateAll = maxGenerations === true;
             let maxElements = generateAll ? Infinity : maxGenerations;
-    
+
             // Counter for generated elements
             let generatedCount = 0;
-    
+
             // Set to store unique source URLs
             let uniqueSources = new Set();
-    
-    
-            // Iterate over stencilData
-for (const [objectKey, objectValue] of Object.entries(stencilData)) {
-    if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
 
-    if (objectValue.stencil) {
-        // If the object has a stencil array
-        if (skipSame) {
-            // If skipSame is true, consider only one source URL
-            let uniqueSrc = objectValue.stencil[0].src; // Pick the first source
-            if (!uniqueSources.has(uniqueSrc)) {
-                // If this source hasn't been processed before
-                const img = createImageElement(uniqueSrc, `${objectKey} x ${objectValue.stencil[0].collection}`);
-                const text = createTextElement(objectKey);
-                // Create a new div for each pair of p and img
-                const pairDiv = document.createElement('div');
-                pairDiv.id = `stencil-suggestion_${objectKey}_${objectValue.stencil[0].collection}_${generatedCount}`
-                pairDiv.classList.add('col-md-3', 'stencil-suggestion');
-                // Add draggable attribute
-                pairDiv.setAttribute('draggable', 'true');
-                // Add ondragstart attribute
-                pairDiv.setAttribute('ondragstart', 'drag(event)');
-                pairDiv.appendChild(text);
-                pairDiv.appendChild(img);
-                // Append the pairDiv to the stencilRow
-                stencilRow.appendChild(pairDiv);
-                uniqueSources.add(uniqueSrc); // Add to set to mark it as processed
-                generatedCount++;
-            }
-        } else {
-            // If skipSame is false, generate images for all sources
-            for (const stencil of objectValue.stencil) {
+
+            // Iterate over stencilData
+            for (const [objectKey, objectValue] of Object.entries(stencilData)) {
                 if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
 
-                const img = createImageElement(stencil.src, `${objectKey} x ${stencil.collection}`);
-                const text = createTextElement(objectKey);
-                // Create a new div for each pair of p and img
-                const pairDiv = document.createElement('div');
-                pairDiv.id = `stencil-suggestion_${objectKey}_${objectValue.stencil[0].collection}_${generatedCount}`
-                pairDiv.classList.add('col-md-3', 'stencil-suggestion');
-                // Add draggable attribute
-                pairDiv.setAttribute('draggable', 'true');
-                // Add ondragstart attribute
-                pairDiv.setAttribute('ondragstart', 'drag(event)');
-                pairDiv.appendChild(text);
-                pairDiv.appendChild(img);
-                // Append the pairDiv to the stencilRow
-                stencilRow.appendChild(pairDiv);
-                generatedCount++;
-            }
-        }
-    } else {
-        // If the object does not have a stencil array, use a placeholder image and text
-        if (!strictHasImg) {
-            if (generatedCount >= maxElements) return; // Stop generating if maxElements is reached
+                if (objectValue.stencil) {
 
-            const img = createImageElement(placeholderImage, `${objectKey} x Not present in stencils database`);
-            const text = createTextElement(objectKey);
-            // Create a new div for each pair of p and img
-            const pairDiv = document.createElement('div');
-            pairDiv.id = `stencil-suggestion_${objectKey}_Not in stencil database_${generatedCount}`
-            pairDiv.classList.add('col-md-3', 'stencil-suggestion');
-            // Add draggable attribute
-            pairDiv.setAttribute('draggable', 'true');
-            // Add ondragstart attribute
-            pairDiv.setAttribute('ondragstart', 'drag(event)');
-            pairDiv.appendChild(text);
-            pairDiv.appendChild(img);
-            // Append the pairDiv to the stencilRow
-            stencilRow.appendChild(pairDiv);
-            generatedCount++;
-        }
-    }
-}
-             console.log("Images generated: ", generatedCount);
+                    // enable the stencil div if data is present
+                    document.getElementById('stencilSection').style.display = 'block'
+
+                    // If the object has a stencil array
+                    if (skipSame) {
+                        // If skipSame is true, consider only one source URL
+                        let uniqueSrc = objectValue.stencil[0].src; // Pick the first source
+                        if (!uniqueSources.has(uniqueSrc)) {
+                            // If this source hasn't been processed before
+                            const img = createImageElement(uniqueSrc, `${objectKey} x ${objectValue.stencil[0].collection}`);
+                            const text = createTextElement(objectKey);
+                            // Create a new div for each pair of p and img
+                            const pairDiv = document.createElement('div');
+                            pairDiv.id = `stencil-suggestion_${objectKey}_${objectValue.stencil[0].collection}_${generatedCount}`
+                            pairDiv.classList.add('col-md-2', 'stencil-suggestion');
+                            // Add draggable attribute
+                            pairDiv.setAttribute('draggable', 'true');
+                            // Add ondragstart attribute
+                            pairDiv.setAttribute('ondragstart', 'drag(event)');
+                            pairDiv.appendChild(text);
+                            pairDiv.appendChild(img);
+                            // Append the pairDiv to the stencilRow
+                            stencilRow.appendChild(pairDiv);
+                            uniqueSources.add(uniqueSrc); // Add to set to mark it as processed
+                            generatedCount++;
+                        }
+                    } else {
+                        // If skipSame is false, generate images for all sources
+                        for (const stencil of objectValue.stencil) {
+                            if (generatedCount >= maxElements) break; // Stop generating if maxElements is reached
+
+                            const img = createImageElement(stencil.src, `${objectKey} x ${stencil.collection}`);
+                            const text = createTextElement(objectKey);
+                            // Create a new div for each pair of p and img
+                            const pairDiv = document.createElement('div');
+                            pairDiv.id = `stencil-suggestion_${objectKey}_${objectValue.stencil[0].collection}_${generatedCount}`
+                            pairDiv.classList.add('col-md-2', 'stencil-suggestion');
+                            // Add draggable attribute
+                            pairDiv.setAttribute('draggable', 'true');
+                            // Add ondragstart attribute
+                            pairDiv.setAttribute('ondragstart', 'drag(event)');
+                            pairDiv.appendChild(text);
+                            pairDiv.appendChild(img);
+                            // Append the pairDiv to the stencilRow
+                            stencilRow.appendChild(pairDiv);
+                            generatedCount++;
+                        }
+                    }
+                } else {
+                    // If the object does not have a stencil array, use a placeholder image and text
+                    if (!strictHasImg) {
+                        if (generatedCount >= maxElements) return; // Stop generating if maxElements is reached
+
+                        const img = createImageElement(placeholderImage, `${objectKey} x Not present in stencils database`);
+                        const text = createTextElement(objectKey);
+                        // Create a new div for each pair of p and img
+                        const pairDiv = document.createElement('div');
+                        pairDiv.id = `stencil-suggestion_${objectKey}_Not in stencil database_${generatedCount}`
+                        pairDiv.classList.add('col-md-2', 'stencil-suggestion');
+                        // Add draggable attribute
+                        pairDiv.setAttribute('draggable', 'true');
+                        // Add ondragstart attribute
+                        pairDiv.setAttribute('ondragstart', 'drag(event)');
+                        pairDiv.appendChild(text);
+                        pairDiv.appendChild(img);
+                        // Append the pairDiv to the stencilRow
+                        stencilRow.appendChild(pairDiv);
+                        generatedCount++;
+                    }
+                }
+            }
+            console.log("Images generated: ", generatedCount);
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
     };
-    
+
     function createImageElement(src, alt) {
         const img = document.createElement('img');
         img.src = src;
@@ -288,5 +320,5 @@ for (const [objectKey, objectValue] of Object.entries(stencilData)) {
         return textElement;
     }
 
-    </script>
+</script>
 {% endblock content %}
