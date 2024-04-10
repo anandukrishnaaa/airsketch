@@ -255,7 +255,7 @@
             model.renderPredictions(predictions, canvas, ctx, video);
 
             predictions.forEach(prediction => {
-                if (prediction.label === 'open' && prediction.score > 0.8) {
+                if (prediction.label === 'point' && prediction.score > 0.8) {
                     handlePointPrediction(prediction);
                 }
             });
@@ -321,7 +321,7 @@
             sendDataToCanvas();
             canvasUpdated = false; // Reset the flag after sending data
         }
-    }, 5000);
+    }, 3000);
 
     function sendDataToCanvas() {
         const canvasData = {

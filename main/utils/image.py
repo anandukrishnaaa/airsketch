@@ -13,7 +13,7 @@ UNSPLASH_API_URL = "https://api.unsplash.com/search/photos"
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 PEXELS_API_URL = "https://api.pexels.com/v1/search"
 
-PER_PAGE = 1
+PER_PAGE = 5
 PAGE = 1
 
 
